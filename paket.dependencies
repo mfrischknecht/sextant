@@ -1,0 +1,12 @@
+source https://www.nuget.org/api/v2
+
+framework: >= net461
+nuget FSharp.Core
+nuget System.Collections.Immutable
+
+// [ FAKE GROUP ]
+group Build
+    source https://api.nuget.org/v3/index.json
+    nuget Fake.DotNet.Cli
+    nuget Fake.IO.FileSystem
+    nuget Fake.Core.Target
