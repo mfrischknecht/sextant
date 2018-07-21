@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <!-- <ItemGroup>
+    <Compile Include="Desktop.cs" />
+    <Compile Include="DwmThumbnails.cs" />
+    <Compile Include="Keyboard.cs" />
+    <Compile Include="Mouse.cs" />
+    <Compile Include="Processes.cs" />
+    <Compile Include="Threads.cs" />
+    <Compile Include="Windows.cs" />
+    <Compile Include="WinEventHooks.cs" />
+  </ItemGroup> -->
+
+</Project>
