@@ -14,6 +14,7 @@ open Microsoft.FSharp.Reflection
 
 open Sextant.NativeErrors
 open Sextant.Text
+open System.Windows.Data
 
 module Log =
     type Severity =
@@ -99,8 +100,22 @@ module Log =
 
         member this.Add (entry:Entry) =
             lock itemsMonitor (fun _ ->
-                let headline = Label ()
-                headline.Content <- entry.ShortText.Text
+                let firstLine =
+                    let grid = Grid (HorizontalAlignment = HorizontalAlignment.Stretch)
+                    RowDefinition () |> grid.RowDefinitions.Add
+                    ColumnDefinition () |> grid.ColumnDefinitions.Add
+                    ColumnDefinition (Width = GridLength (60.0)) |> grid.ColumnDefinitions.Add
+
+                    let headline = Label ()
+                    headline.Content <- entry.ShortText.Text
+                    headline |> grid.Children.Add |> ignore
+
+                    let timestamp = Label ()
+                    timestamp.Content <- entry.Timestamp.ToString("HH:mm:ss")
+                    timestamp |> grid.Children.Add |> ignore
+                    Grid.SetColumn (timestamp,1)
+
+                    grid
 
                 let bg =
                     match entry.Severity with
@@ -117,7 +132,7 @@ module Log =
                 match entry.AdditionalText with
                 | None -> 
                     border.Padding <- Thickness(25.0,0.0,0.0,0.0)
-                    border.Child <- headline
+                    border.Child <- firstLine
 
                 | Some text ->
                     let content = Label ()
@@ -125,11 +140,21 @@ module Log =
                     content.Margin <- Thickness(25.0,0.0,0.0,0.0)
                     content.Content <- entry.AdditionalText |> Option.defaultValue ""
 
-                    let expander = Expander ()
+                    let expander = Expander (HorizontalAlignment = HorizontalAlignment.Stretch)
                     expander.Background <- bg
-                    expander.Header <- headline
                     expander.IsExpanded <- false
                     expander.Content <- content
+
+                    //Hack: Automatically adjust the grid size according to the expander's width
+                    ColumnDefinition (Width = GridLength (25.0)) 
+                    |> firstLine.ColumnDefinitions.Add
+
+                    firstLine.SetBinding (
+                        Grid.WidthProperty,
+                        Binding (Source=expander, Path=PropertyPath("ActualWidth"), Mode=BindingMode.OneWay))
+                        |> ignore;
+
+                    expander.Header <- firstLine
 
                     border.Child <- expander
 
