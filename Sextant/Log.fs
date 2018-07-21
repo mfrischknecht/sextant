@@ -2,11 +2,10 @@ namespace Sextant
 
 open System
 open System.Collections.Immutable
-open System.Drawing
+open System.Diagnostics.CodeAnalysis
 open System.Runtime.CompilerServices
 open System.Text
 open System.Text.RegularExpressions
-open System.Threading
 open System.Windows
 open System.Windows.Controls
 open System.Windows.Media
@@ -52,6 +51,7 @@ module Log =
                 | :? Entry as other -> this.Timestamp.CompareTo other.Timestamp
                 | _ -> invalidArg "obj" "Cannot compare with different types"
 
+        [<SuppressMessage("NameConventions","*")>]
         static member ofNativeError (error:NativeError) =
             let info = 
                 error.Annotations @ [ error.ErrorText ]
@@ -142,6 +142,7 @@ module Log =
                 controls.Items.Remove (control)
                 entryControls = entryControls.Remove entry )
 
+        [<SuppressMessage("NameConventions","*")>]
         static member internal log entry =
             let windows = lock windowsMonitor (fun _ -> windows)
             for window in windows do window.Add entry

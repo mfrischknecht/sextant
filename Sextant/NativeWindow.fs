@@ -3,6 +3,7 @@
 open System
 open System.Text
 open System.Diagnostics
+open System.Diagnostics.CodeAnalysis
 open System.Drawing
 open System.Runtime.InteropServices
 
@@ -47,9 +48,11 @@ module NativeWindow =
     type Window  = 
         { Handle: IntPtr }
 
+          [<SuppressMessage("NameConventions","*")>]
           static member fromHandle handle = 
             { Window.Handle = handle }
 
+          [<SuppressMessage("NameConventions","*")>]
           static member fromWPF window =
             { Window.Handle = window |> WPF.handle }
 
@@ -96,12 +99,12 @@ module NativeWindow =
 
     type Window with member this.Children = children this
 
-    let ``process`` (window:Window) =
+    let findProcess (window:Window) =
         window.GetProcessAndThreadIds ()
         |> Result.mapError ``exception``
         |> Result.bind (fst >> int >> Process.getById)
 
-    type Window with member this.Process = ``process`` this
+    type Window with member this.Process = findProcess this
 
     let placement (window:Window) =
         let mutable placement = Windows.Placement ()
@@ -336,6 +339,7 @@ module NativeWindow =
         | 0 -> Error (NativeError.Last |> annotate "Failed to get window parent")
         | _ -> handle |> Window.fromHandle |> Result.Ok
 
+    [<SuppressMessage("NameConventions","*")>]
     type WindowEvent =
         | EVENT_MIN                                    = 0x00000001
         | EVENT_MAX                                    = 0x7FFFFFFF
