@@ -7,6 +7,8 @@ open Fake.IO.FileSystemOperators
 open Fake.IO.Globbing.Operators
 open Fake.Core.TargetOperators
 
+open System.Diagnostics.CodeAnalysis
+
 let args = 
     System.Environment.GetCommandLineArgs() 
     |> Array.skipWhile (fun str -> str <> "--") 
@@ -46,4 +48,35 @@ Target.create "RebuildAll" ignore
 "Clean" ==> "RebuildAll"
 "Build" ==> "RebuildAll"
 
-Target.runOrDefaultWithArguments "All"
+[<SuppressMessage("Hints","*")>]
+let exceptionChain (ex:System.Exception) =
+    seq { let mutable e = ex
+          while e <> null do
+            yield e 
+            e <- e.InnerException}
+
+let build () =
+    try 
+        Target.runOrDefaultWithArguments "All"
+    with
+    | ex -> 
+        Trace.traceError "Build failed!"
+
+        ex |> exceptionChain 
+        |> Seq.iter (fun e -> 
+            Trace.traceError e.Message)
+
+if args |> Seq.contains "--watch" |> not then
+    build ()
+
+else
+    Trace.trace "Setting up file system watcher..."
+
+    use watcher = 
+        !! "**/.*proj" ++ "**/*.fs" ++ "**/*.cs"
+        |> ChangeWatcher.run (ignore >> build)
+
+    Trace.trace "Starting initial build..."
+    build ()
+
+    System.Console.ReadLine() |> ignore
