@@ -4,6 +4,7 @@ open System
 open System.Collections.Immutable
 open System.Drawing
 open System.Runtime.CompilerServices
+open System.Text
 open System.Text.RegularExpressions
 open System.Threading
 open System.Windows
@@ -160,7 +161,7 @@ module Log =
     let warning = simpleMessage Severity.Warning
     let error = simpleMessage Severity.Error
 
-    let logToStream (stream:IO.TextWriter) (entry:Entry) =
+    let logToWriter (writer:IO.TextWriter) (entry:Entry) =
         let severity = entry.Severity
         let severity = 
             FSharpValue.GetUnionFields(severity, typeof<Severity>)
@@ -184,10 +185,14 @@ module Log =
         firstLine
         |> Seq.prependElementTo additionalLines 
         |> Lines.concat 
-        |> stream.WriteLine
+        |> writer.WriteLine
+
+    let logToStream (encoding:Encoding) (stream:IO.Stream) (entry:Entry) =
+        use writer = new IO.StreamWriter(stream,encoding)
+        logToWriter writer entry
 
     let logToConsole entry = 
-        entry |> logToStream Console.Error
+        entry |> logToWriter Console.Error
 
     let log entry =
         entry |> LogWindow.log
