@@ -1,3 +1,10 @@
+### Custom ignores ###
+## Ignore directories used/maintained by paket/fake
+packages
+.paket
+.fake
+
+
 # Created by https://www.gitignore.io/api/vim,fsharp,csharp,windows,visualstudio,visualstudiocode
 
 ### Csharp ###
