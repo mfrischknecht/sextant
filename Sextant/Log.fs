@@ -5,16 +5,15 @@ open System.Collections.Immutable
 open System.Diagnostics.CodeAnalysis
 open System.Runtime.CompilerServices
 open System.Text
-open System.Text.RegularExpressions
 open System.Windows
 open System.Windows.Controls
+open System.Windows.Data
 open System.Windows.Media
 
 open Microsoft.FSharp.Reflection
 
 open Sextant.NativeErrors
 open Sextant.Text
-open System.Windows.Data
 
 module Log =
     type Severity =
@@ -24,11 +23,9 @@ module Log =
 
     type Source =
         | NativeError of NativeError
+        | Exception   of Exception
 
-    type Entry(shortText:Line, ?severity: Severity, ?additionalText:string option, ?source:Source option) =
-        let severity       = defaultArg severity       Info
-        let additionalText = defaultArg additionalText None
-        let source         = defaultArg source         None
+    type Entry private (shortText:Line, severity: Severity, additionalText:string option, source:Source option) =
         let timestamp      = DateTime.Now
 
         member this.Timestamp = timestamp
@@ -53,6 +50,26 @@ module Log =
                 | _ -> invalidArg "obj" "Cannot compare with different types"
 
         [<SuppressMessage("NameConventions","*")>]
+        static member ofException (error:Exception) =
+            let text = 
+                error 
+                |> Exception.chain
+                |> Seq.map (fun e -> 
+                    sprintf "%s: %s\r\n%s" (e.GetType().Name) e.Message (e.StackTrace.ToString()))
+                |> Seq.appendTo [ error.Message; "Stack trace:" ]
+                |> String.concat "\r\n\r\n"
+
+            let lines = text |> Lines.split 
+            let head = lines |> Seq.head
+            let tail = 
+                lines |> Seq.tail 
+                |> stripEmptyHeader 
+                |> Option.nonEmptySeq 
+                |> Option.map Lines.concat
+
+            Entry(head, Error, tail, error |> Source.Exception |> Some)
+
+        [<SuppressMessage("NameConventions","*")>]
         static member ofNativeError (error:NativeError) =
             let info = 
                 error.Annotations @ [ error.ErrorText ]
@@ -60,14 +77,23 @@ module Log =
                 |> Array.concat
 
             let shortText = info |> Seq.head
-
             let text = 
-                info 
-                |> Seq.tail
+                info |> Seq.tail 
                 |> Option.nonEmptySeq
                 |> Option.map Lines.concat
 
             Entry(shortText, Error, text, error |> Source.NativeError |> Some)
+
+        [<SuppressMessage("NameConventions","*")>]
+        static member simple severity text =
+            let lines = text |> Line.sequence
+            let headline = lines |> Seq.head
+            let text = 
+                lines |> Seq.tail 
+                |> Option.nonEmptySeq
+                |> Option.map Lines.concat
+
+            Entry(headline, severity, text, None)
 
     type LogWindow() as this =
         inherit Window()
@@ -173,20 +199,9 @@ module Log =
             let windows = lock windowsMonitor (fun _ -> windows)
             for window in windows do window.Add entry
 
-    let private simpleMessage severity text =
-        let lines = text |> Line.sequence
-        let headline = lines |> Seq.head
-        let text = 
-            lines 
-            |> Seq.tail 
-            |> Option.nonEmptySeq
-            |> Option.map Lines.concat
-
-        Entry(headline, severity, text, None)
-
-    let info = simpleMessage Severity.Info
-    let warning = simpleMessage Severity.Warning
-    let error = simpleMessage Severity.Error
+    let info    = Entry.simple Severity.Info
+    let warning = Entry.simple Severity.Warning
+    let error   = Entry.simple Severity.Error
 
     let logToWriter (writer:IO.TextWriter) (entry:Entry) =
         let severity = entry.Severity
