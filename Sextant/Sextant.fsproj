@@ -36,6 +36,7 @@
     <Compile Include="HighlightWindow.fs" />
     <Compile Include="Hotkeys.fs" />
     <Compile Include="JumpTargets.fs" />
+    <Compile Include="Text.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Modes.fs" />
     <Compile Include="OverlayMode.fs" />

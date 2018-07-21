@@ -13,6 +13,7 @@ open System.Windows.Media
 open Microsoft.FSharp.Reflection
 
 open Sextant.NativeErrors
+open Sextant.Text
 
 module Log =
     type Severity =
@@ -23,7 +24,7 @@ module Log =
     type Source =
         | NativeError of NativeError
 
-    type Entry(shortText:string, ?severity: Severity, ?additionalText:string option, ?source:Source option) =
+    type Entry(shortText:Line, ?severity: Severity, ?additionalText:string option, ?source:Source option) =
         let severity       = defaultArg severity       Info
         let additionalText = defaultArg additionalText None
         let source         = defaultArg source         None
@@ -51,10 +52,20 @@ module Log =
                 | _ -> invalidArg "obj" "Cannot compare with different types"
 
         static member ofNativeError (error:NativeError) =
-            let info = error.Annotations @ [ error.ErrorText ]
+            let info = 
+                error.Annotations @ [ error.ErrorText ]
+                |> Seq.map Line.sequence
+                |> Array.concat
+
             let shortText = info |> Seq.head
-            let text = info |> String.concat "\r\n"
-            Entry(shortText, Error, text |> Option.Some, NativeError error |> Option.Some)
+
+            let text = 
+                info 
+                |> Seq.tail
+                |> Option.nonEmptySeq
+                |> Option.map Lines.concat
+
+            Entry(shortText, Error, text, error |> Source.NativeError |> Some)
 
     type LogWindow() as this =
         inherit Window()
@@ -88,7 +99,7 @@ module Log =
         member this.Add (entry:Entry) =
             lock itemsMonitor (fun _ ->
                 let headline = Label ()
-                headline.Content <- entry.ShortText
+                headline.Content <- entry.ShortText.Text
 
                 let bg =
                     match entry.Severity with
@@ -134,14 +145,14 @@ module Log =
             let windows = lock windowsMonitor (fun _ -> windows)
             for window in windows do window.Add entry
 
-    let private lineEnding = Regex ("\r?\n")
     let private simpleMessage severity text =
-        let lines = lineEnding.Split(text)
-        let headline = lines |> Array.head
-        let lines = lines |> Array.tail
-        let text = lines |> function
-            | [| |] -> None
-            | _ -> lines |> String.concat "\r\n" |> Some
+        let lines = text |> Line.sequence
+        let headline = lines |> Seq.head
+        let text = 
+            lines 
+            |> Seq.tail 
+            |> Option.nonEmptySeq
+            |> Option.map Lines.concat
 
         Entry(headline, severity, text, None)
 
@@ -157,15 +168,23 @@ module Log =
             | case, _ -> case.Name
 
         let severity = severity.[0].ToString()
-
         let timestamp = entry.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.ffff")
 
-        let text = 
-            [ entry.ShortText; entry.AdditionalText |> Option.defaultValue "" ] 
-            |> Seq.filter (fun s -> s.Length > 0)
-            |> String.concat "\r\n"
+        let firstLine = 
+            entry.ShortText
+            |> Line.map (sprintf "[%s] %s: %s" severity timestamp) 
+            |> Result.unwrap "Line mapping contains newlines"
 
-        sprintf "[%s] %s: %s" severity timestamp text |> stream.WriteLine
+        let additionalLines = 
+            entry.AdditionalText 
+            |> Option.map indent
+            |> Option.map Lines.split
+            |> Option.defaultValue [||]
+
+        firstLine
+        |> Seq.prependElementTo additionalLines 
+        |> Lines.concat 
+        |> stream.WriteLine
 
     let logToConsole entry = 
         entry |> logToStream Console.Error
