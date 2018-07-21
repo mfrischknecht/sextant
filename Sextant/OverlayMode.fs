@@ -85,6 +85,16 @@ module OverlayMode =
                 |> Seq.map (fun w -> children |> Map.find w)
                 |> Array.ofSeq
 
+            let windowIndexes =
+                let windowIndices =
+                    jumpTargets
+                    |> Seq.map (fun t -> t.Window)
+                    |> JumpTargets.orderByPosition
+                    |> Seq.mapi (fun i w -> (w.Handle.ToInt64(),i))
+                    |> dict
+
+                jumpTargets |> Array.map (fun t -> windowIndices.[t.Window.Handle.ToInt64()])
+
             jumpTargets |> Seq.iteri (fun i child -> 
                 let procName = 
                     child.Window.Process 
@@ -92,10 +102,10 @@ module OverlayMode =
                     |> Option.map name
                     |> Option.defaultValue ""
 
-                child.Overlay.WindowCode  <- (JumpCodes.Code windows.Length i)
+                let index = windowIndexes.[i]
+                child.Overlay.WindowCode  <- (JumpCodes.Code windows.Length index)
                 child.Overlay.WindowTitle <- sprintf "%s\n%s" child.Window.Title procName
                 child.Overlay.Icon        <- child.Window.Icon )
-
 
             //"Build" the overlays of the jump targets from the top, so
             //there aren't too many visual artefacts (the other way around, 
@@ -194,10 +204,7 @@ module OverlayMode =
     let start() =
         let mode = MainOverlay ()
 
-        let windows = 
-            JumpTargets.findWindows () 
-            |> JumpTargets.orderByPosition 
-            |> Array.ofSeq
+        let windows = JumpTargets.findWindows () |> Array.ofSeq
 
         mode.Show ()
         mode.UpdateThumbnails windows
