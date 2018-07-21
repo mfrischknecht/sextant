@@ -74,6 +74,13 @@ module Log =
 
         static let windowsMonitor = Object ()
         static let mutable windows = ImmutableArray.Create ()
+        static let severityColors = 
+            [ (Error,   "#FFFF6666")
+              (Warning, "#FFFFE866") 
+              (Info,    "#00000000") ] 
+            |> Seq.map (fun (severity,color) -> 
+                (severity, ColorConverter.ConvertFromString color :?> Color |> SolidColorBrush))
+            |> Map
 
         let scrollview = ScrollViewer ()
         let itemsMonitor = Object ()
@@ -117,17 +124,11 @@ module Log =
 
                     grid
 
-                let bg =
-                    match entry.Severity with
-                    | Error   -> System.Windows.Media.Brushes.Red
-                    | Warning -> System.Windows.Media.Brushes.Yellow
-                    | Info    -> System.Windows.Media.Brushes.LightBlue
-
                 let border = Border ()
                 border.BorderBrush <- System.Windows.Media.Brushes.Black
                 border.BorderThickness <- Thickness (1.0)
                 border.CornerRadius <- CornerRadius (0.0)
-                border.Background <- bg
+                border.Background <- severityColors.[entry.Severity]
 
                 match entry.AdditionalText with
                 | None -> 
@@ -136,12 +137,12 @@ module Log =
 
                 | Some text ->
                     let content = Label ()
-                    content.Background <- bg
+                    content.Background <- severityColors.[entry.Severity]
                     content.Margin <- Thickness(25.0,0.0,0.0,0.0)
                     content.Content <- entry.AdditionalText |> Option.defaultValue ""
 
                     let expander = Expander (HorizontalAlignment = HorizontalAlignment.Stretch)
-                    expander.Background <- bg
+                    expander.Background <- severityColors.[entry.Severity]
                     expander.IsExpanded <- false
                     expander.Content <- content
 
