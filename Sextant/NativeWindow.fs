@@ -111,9 +111,9 @@ module NativeWindow =
               let window = this
               let result = window.AttatchToThread ()
 
-              match result with
-              | Error error -> Console.Error.WriteLine (error |> text)
-              | _ -> ()
+              result 
+              |> Result.onError (Log.Entry.ofNativeError >> Log.log) 
+              |> ignore
 
               { new IDisposable with
                   member this.Dispose () =

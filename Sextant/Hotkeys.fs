@@ -60,7 +60,10 @@ module Hotkeys =
             |> Map.tryFind keyCombination
             |> function
                 | Some event ->
-                    event |> HotkeyEvent.unregister |> Result.onError (text >> Console.Error.WriteLine) |> ignore
+                    event 
+                    |> HotkeyEvent.unregister 
+                    |> Result.onError (Log.Entry.ofNativeError >> Log.log) 
+                    |> ignore
                     observers <- observers |> Map.remove keyCombination
                 | _ -> ()
 
@@ -84,6 +87,6 @@ module Hotkeys =
         callbacks
         |> Seq.map (fun (keys,callback) -> 
             handler.Register keys callback 
-            |> Result.onError (text >> Console.Error.WriteLine))
+            |> Result.onError (Log.Entry.ofNativeError >> Log.log))
         |> Seq.iter ignore
         handler

@@ -372,7 +372,7 @@ module GridMode =
                             this.Close()
 
                             data.Window |> JumpTargets.activate
-                            |> Result.onError (NativeErrors.text >> Console.Error.WriteLine) 
+                            |> Result.onError (Log.Entry.ofNativeError >> Log.log)
                             |> ignore
 
                             data.Window |> highlight
