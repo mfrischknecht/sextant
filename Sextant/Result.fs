@@ -1,6 +1,11 @@
-﻿namespace Sextant
+namespace Sextant
 
 module Result =
+    let nonEmptyOption =
+        function
+            | Some x -> Ok x
+            | None   -> Error ()
+
     let defaultValue ``default`` =
         function
             | Ok    value -> value
