@@ -1,6 +1,7 @@
-﻿namespace Sextant
+namespace Sextant
 
 open System
+open System.Diagnostics.CodeAnalysis
 open System.Collections.Generic
 
 open Sextant.Rectangle
@@ -21,7 +22,8 @@ module OverlayMode =
           Thumbnail:ThumbnailForm
           Overlay:ThumbnailOverlayForm }
 
-        static member ForWindow (window:Window) =
+        [<SuppressMessage("NameConventions","*")>]
+        static member forWindow (window:Window) =
             let id = window.Handle.ToInt64()
             let t  = window |> ThumbnailForm
             let o = t |> Window.fromWPF |> ThumbnailOverlayForm
@@ -31,7 +33,11 @@ module OverlayMode =
     let thumbnail (child:Child) = child.Thumbnail
     let overlay   (child:Child) = child.Overlay
 
-    let CreateChildren windows = windows |> Seq.map (fun w -> w, w |> Child.ForWindow) |> Map.ofSeq
+    let createChildren windows = 
+        windows 
+        |> Seq.map (fun w -> 
+            w, w |> Child.forWindow) 
+        |> Map.ofSeq
 
     let updateChildren oldChildren (windows:Window[]) =
         let deleted = 
@@ -44,7 +50,8 @@ module OverlayMode =
             let getOrConstructChild window =
                 oldChildren
                 |> Map.tryFind window
-                |> Option.defaultWith (fun () -> window |> Child.ForWindow)
+                |> Option.defaultWith (fun () -> 
+                    window |> Child.forWindow)
 
             windows
             |> Seq.map (fun window -> window, window |> getOrConstructChild)
@@ -56,7 +63,7 @@ module OverlayMode =
         inherit DesktopOverlay()
 
         let mutable ignoreDeactivates = false
-        let mutable children = Seq.empty |> CreateChildren
+        let mutable children = Seq.empty |> createChildren
         let mutable typedCode = UserInput.None
 
         let updateThumbnails (windows:Window[]) =

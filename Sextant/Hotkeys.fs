@@ -1,7 +1,8 @@
-﻿namespace Sextant
+namespace Sextant
 
 open System
 open System.Collections.Generic
+open System.Diagnostics.CodeAnalysis
 open System.Threading
 open System.Runtime.InteropServices
 open System.Windows.Interop
@@ -33,6 +34,7 @@ module Hotkeys =
         member private this.Source = source
         member this.Event = event
 
+        [<SuppressMessage("NameConventions","*")>]
         static member register (key,modifiers) window =
             let id = generateId ()
             let success = Keyboard.RegisterHotKey (window |> handle, id, modifiers, key)
@@ -41,6 +43,7 @@ module Hotkeys =
             else
                 Error (NativeError.Last |> annotate "Unable to register global hotkey")
 
+        [<SuppressMessage("NameConventions","*")>]
         static member unregister (event:HotkeyEvent) =
             let success = Keyboard.UnregisterHotKey (event.Window |> handle, event.ID)
             if success then
