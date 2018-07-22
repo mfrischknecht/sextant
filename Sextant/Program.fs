@@ -10,7 +10,6 @@ open Sextant.Hotkeys
 open Sextant.ContextMenu
 
 module App =
-
     type IndicatorForm =
         { OriginalWindow:Window
           Form:Form }
@@ -75,4 +74,9 @@ module App =
             trayIcon.Visible <- false 
             trayIcon.Icon    <- null )
 
-        app.Run ()
+        try
+            app.Run ()
+        with
+        | ex -> 
+            ex |> Log.Entry.ofException |> Log.log
+            -1
