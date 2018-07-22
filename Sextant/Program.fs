@@ -1,4 +1,4 @@
-﻿namespace Sextant
+namespace Sextant
 
 open System
 open System.Windows.Forms
@@ -18,11 +18,11 @@ module App =
     [<STAThread>]
     let main argv = 
         let executingAssembly = Assembly.GetExecutingAssembly ()
-        use trayIcon = new NotifyIcon()
-        do
+
+        use trayIcon = 
             use stream = executingAssembly.GetManifestResourceStream("Sextant.Resources.TrayIcon.ico")
             let icon  = new System.Drawing.Icon (stream)
-            trayIcon.Icon <- icon
+            new NotifyIcon(Icon = icon)
 
         let mutable hotkeys = None
 

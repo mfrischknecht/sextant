@@ -1,4 +1,4 @@
-﻿namespace Sextant
+namespace Sextant
 
 open System
 open System.Windows
@@ -10,20 +10,20 @@ module TrayIcon =
     open System.Drawing
 
     type TrayIcon() =
-        let icon = new NotifyIcon()
-
-        do
-            let app = System.Windows.Application.Current
+        let app = System.Windows.Application.Current
+        let icon = 
             let executingAssembly = Assembly.GetExecutingAssembly ()
             let resources = ResourceManager("ApplicationResources", executingAssembly)
 
-            icon.Text <- "Sextant"
-            icon.Icon <- resources.GetObject("TrayIcon") :?> Icon
-            icon.Visible <- true
+            new NotifyIcon (
+                Text    = "Sextant",
+                Icon    = (resources.GetObject("TrayIcon") :?> Icon),
+                Visible = true)
 
+        do
             app.Exit.Add (fun _ ->
                 icon.Visible <- false
-                icon.Icon <- null )
+                icon.Icon    <- null )
 
         interface IDisposable with
             member this.Dispose () =

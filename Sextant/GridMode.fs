@@ -1,9 +1,10 @@
-﻿namespace Sextant
+namespace Sextant
 
 open System
 open System.Windows
 open System.Windows.Controls
 open System.Windows.Forms
+open System.Windows.Media
 
 open Sextant.Rectangle
 open Sextant.Overlay
@@ -136,34 +137,35 @@ module GridMode =
         inherit Border()
         let mutable (data:CellData option) = None
 
-        let grid       = Grid ()
-        let titleLabel = Windows.Controls.Label ()
+        let grid = 
+            Grid (
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment   = VerticalAlignment  .Stretch)
+        let titleLabel = 
+            Windows.Controls.Label (
+                Content                    = "",
+                HorizontalAlignment        = Windows.HorizontalAlignment.Stretch,
+                VerticalAlignment          = Windows.VerticalAlignment  .Stretch,
+                HorizontalContentAlignment = Windows.HorizontalAlignment.Center,
+                VerticalContentAlignment   = Windows.VerticalAlignment  .Top,
+                FontSize                   = 36.0,
+                Padding                    = ((0.0, 25.0, 0.0, 0.0) |> Windows.Thickness),
+                Foreground                 = Brushes.White)
+
         let codeLabel  = JumpCodeLabel ()
-        let image      = Image ()
+        let image = 
+            Image (
+                Width               = 50.0,
+                Height              = 50.0,
+                Margin              = (20.0 |> System.Windows.Thickness),
+                Stretch             = Windows.Media.Stretch.UniformToFill,
+                HorizontalAlignment = Windows.HorizontalAlignment.Left,
+                VerticalAlignment   = Windows.VerticalAlignment  .Top )
 
         do
             let white = (byte 255, byte 255, byte 255) |> Windows.Media.Color.FromRgb |> Windows.Media.SolidColorBrush
             this.BorderBrush <- white
-
-            grid.HorizontalAlignment <- Windows.HorizontalAlignment.Stretch
-            grid.VerticalAlignment   <- Windows.VerticalAlignment  .Stretch
             this.Child <- grid
-
-            titleLabel.Content                    <- ""
-            titleLabel.HorizontalAlignment        <- Windows.HorizontalAlignment.Stretch
-            titleLabel.VerticalAlignment          <- Windows.VerticalAlignment  .Stretch
-            titleLabel.HorizontalContentAlignment <- Windows.HorizontalAlignment.Center
-            titleLabel.VerticalContentAlignment   <- Windows.VerticalAlignment  .Top
-            titleLabel.FontSize                   <- 36.0
-            titleLabel.Padding                    <- (0.0, 25.0, 0.0, 0.0) |> Windows.Thickness
-            titleLabel.Foreground                 <- white
-
-            image.Width               <- 50.0
-            image.Height              <- 50.0
-            image.Margin              <- 20.0 |> System.Windows.Thickness
-            image.Stretch             <- Windows.Media.Stretch.UniformToFill
-            image.HorizontalAlignment <- Windows.HorizontalAlignment.Left
-            image.VerticalAlignment   <- Windows.VerticalAlignment  .Top
 
             grid.Children.Add titleLabel |> ignore
             grid.Children.Add codeLabel  |> ignore
@@ -175,7 +177,7 @@ module GridMode =
                 data <- value
                 match value with
                 | Some data ->
-                    grid.Visibility <- Visibility.Visible
+                    grid.Visibility    <- Visibility.Visible
                     titleLabel.Content <- data.Window |> title
                     codeLabel.JumpCode <- data.Code
                     image.Source <- 

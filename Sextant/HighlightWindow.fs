@@ -35,17 +35,21 @@ module HighlightWindow =
             |> Result.unwrap "Color parsing failed" 
             |> Nullable
 
+        static let duration = 500.0 |> TimeSpan.FromMilliseconds |> Duration
+
         do
             this.Background <- bg
 
             NameScope.SetNameScope(this, NameScope ())
             this.RegisterName("brush",bg)
 
-            let animation = ColorAnimation ()
-            animation.From <- fromColor
-            animation.To   <- toColor
-            animation.Duration <- TimeSpan.FromMilliseconds(500.0) |> Duration
-            animation.AutoReverse <- false
+            let animation = 
+                ColorAnimation (
+                    From        = fromColor, 
+                    To          = toColor, 
+                    Duration    = duration, 
+                    AutoReverse = false)
+
             animation.Completed.Add (fun _ -> this.Close ())
 
             let storyboard = Storyboard ()

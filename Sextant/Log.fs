@@ -109,20 +109,23 @@ module Log =
                 (severity, color |> Color.parse |> Result.unwrap "Color parsing failed" |> SolidColorBrush))
             |> Map
 
-        let scrollview = ScrollViewer ()
         let itemsMonitor = Object ()
-        let controls = ItemsControl ()
+
+        let controls = 
+            ItemsControl (
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment   = VerticalAlignment  .Stretch)
+
+        let scrollview = 
+            ScrollViewer (
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment   = VerticalAlignment  .Stretch,
+                Content             = controls)
                 
         let mutable entryControls = [] |> Map
 
         do
-            scrollview.HorizontalAlignment <- HorizontalAlignment.Stretch
-            scrollview.VerticalAlignment   <- VerticalAlignment  .Stretch
             this.AddChild(scrollview)
-
-            controls.HorizontalAlignment <- HorizontalAlignment.Stretch
-            controls.VerticalAlignment   <- VerticalAlignment  .Stretch
-            scrollview.Content <- controls
 
             lock windowsMonitor (fun _ ->
                 windows <- windows.Add this)
@@ -151,38 +154,40 @@ module Log =
 
                     grid
 
-                let border = Border ()
-                border.BorderBrush <- System.Windows.Media.Brushes.Black
-                border.BorderThickness <- Thickness (1.0)
-                border.CornerRadius <- CornerRadius (0.0)
-                border.Background <- severityColors.[entry.Severity]
+                let border = 
+                    Border (
+                        BorderBrush     = System.Windows.Media.Brushes.Black,
+                        BorderThickness = (1.0 |> Thickness),
+                        CornerRadius    = (0.0 |> CornerRadius),
+                        Background      = severityColors.[entry.Severity])
 
                 match entry.AdditionalText with
                 | None -> 
                     border.Padding <- Thickness(25.0,0.0,0.0,0.0)
-                    border.Child <- firstLine
+                    border.Child   <- firstLine
 
                 | Some text ->
-                    let content = Label ()
-                    content.Background <- severityColors.[entry.Severity]
-                    content.Margin <- Thickness(25.0,0.0,0.0,0.0)
-                    content.Content <- entry.AdditionalText |> Option.defaultValue ""
+                    let content = 
+                        Label (
+                            Background = severityColors.[entry.Severity],
+                            Margin     = (Thickness(25.0,0.0,0.0,0.0)),
+                            Content    = (entry.AdditionalText |> Option.defaultValue ""))
 
-                    let expander = Expander (HorizontalAlignment = HorizontalAlignment.Stretch)
-                    expander.Background <- severityColors.[entry.Severity]
-                    expander.IsExpanded <- false
-                    expander.Content <- content
+                    let expander = 
+                        Expander (
+                            HorizontalAlignment = HorizontalAlignment.Stretch,
+                            Background          = severityColors.[entry.Severity],
+                            IsExpanded          = false,
+                            Header              = firstLine,
+                            Content             = content)
 
                     //Hack: Automatically adjust the grid size according to the expander's width
-                    ColumnDefinition (Width = GridLength (25.0)) 
-                    |> firstLine.ColumnDefinitions.Add
+                    ColumnDefinition (Width = GridLength (25.0)) |> firstLine.ColumnDefinitions.Add
 
                     firstLine.SetBinding (
                         Grid.WidthProperty,
                         Binding (Source=expander, Path=PropertyPath("ActualWidth"), Mode=BindingMode.OneWay))
                         |> ignore;
-
-                    expander.Header <- firstLine
 
                     border.Child <- expander
 
