@@ -1,7 +1,6 @@
 namespace Sextant
 
 open System
-open System.Collections.Immutable
 open System.Diagnostics.CodeAnalysis
 open System.Runtime.CompilerServices
 open System.Text
@@ -99,7 +98,7 @@ module Log =
         inherit Window()
 
         static let windowsMonitor = Object ()
-        static let mutable windows = ImmutableArray.Create ()
+        static let mutable windows = []
 
         static let severityColors = 
             [ (Error,   "#FFFF6666")
@@ -128,11 +127,11 @@ module Log =
             this.AddChild(scrollview)
 
             lock windowsMonitor (fun _ ->
-                windows <- windows.Add this)
+                windows <- windows |> List.append [this])
 
         override this.OnClosed e =
             lock windowsMonitor (fun _ ->
-                windows <- windows.Remove this)
+                windows <- windows |> List.filter (fun w -> w <> this))
             base.OnClosed e
 
         member this.Add (entry:Entry) =
