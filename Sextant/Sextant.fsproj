@@ -35,6 +35,7 @@
     <Compile Include="WindowThumbnail.fs" />
     <Compile Include="JumpCodes.fs" />
     <Compile Include="TrayIcon.fs" />
+    <Compile Include="ContextMenu.fs" />
     <Compile Include="Overlay.fs" />
     <Compile Include="Thumbnails.fs" />
     <Compile Include="HighlightWindow.fs" />
