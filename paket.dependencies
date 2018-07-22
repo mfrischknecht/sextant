@@ -7,6 +7,8 @@ nuget FSharp.Core
 group Build
     source https://api.nuget.org/v3/index.json
     nuget FSharp.Core
-    nuget Fake.DotNet.Cli
-    nuget Fake.IO.FileSystem
     nuget Fake.Core.Target
+    nuget Fake.Core.Process
+    nuget Fake.IO.FileSystem
+    nuget Fake.DotNet.Cli
+    nuget Fake.DotNet.MsBuild

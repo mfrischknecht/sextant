@@ -1,4 +1,5 @@
 #load ".fake/build.fsx/intellisense.fsx"
+open Fake.IO
 
 open Fake.Core
 open Fake.DotNet
@@ -16,28 +17,73 @@ let args =
     | [| |] -> [| |]
     | x -> x |> Array.skip 1
 
-let setParams (defaults:DotNet.BuildOptions) =
-    if args |> Seq.contains "--debug" |> not then defaults
-    else { defaults with Configuration = DotNet.BuildConfiguration.Debug }
-
 Target.create "Clean" (fun _ ->
     !! "**/bin"
     ++ "**/obj"
     |> Shell.cleanDirs 
 )
 
-Target.create "NativeAPI" (fun _ ->
-    !! "**/NativeAPI.csproj"
-    |> Seq.iter (DotNet.build setParams)
-)
 
-Target.create "Sextant" (fun _ ->
-    !! "**/Sextant.fsproj"
-    |> Seq.iter (DotNet.build setParams)
-)
+if args |> Seq.contains "--msbuild" then
 
-Target.create "Build" ignore
-Target.create "All" ignore
+    let setParams (defaults:MSBuildParams) =
+        let debug = args |> Seq.contains "--debug"
+
+        { defaults with 
+            Verbosity = Some(Quiet)
+            Targets = ["Build"]
+            Properties = [
+                "Optimize",      if debug then "False" else "True"
+                "DebugSymbols",  if debug then "True"  else "False"
+                "Configuration", if debug then "Debug" else "Release"
+            ] }
+
+    Target.create "NativeAPI" (fun _ ->
+        let file = "NativeAPI/NativeAPI.csproj"
+
+        Process.directExec (fun info ->
+            { info with
+                FileName = "dotnet"
+                Arguments = (sprintf "restore \"%s\"" file) })
+        |> ignore
+
+        MSBuild.build setParams file
+    )
+
+    Target.create "Sextant" (fun _ ->
+        let file = "Sextant/Sextant.fsproj"
+
+        Process.directExec (fun info ->
+            { info with
+                FileName = "dotnet"
+                Arguments = (sprintf "restore \"%s\"" file) })
+        |> ignore
+
+        MSBuild.build setParams file
+    )
+
+else //.NET Core
+
+    let setParams (defaults:DotNet.BuildOptions) =
+        if args |> Seq.contains "--debug" |> not then defaults
+        else 
+            { defaults with 
+                Configuration = DotNet.BuildConfiguration.Debug }
+
+
+    Target.create "NativeAPI" (fun _ ->
+        "NativeAPI/NativeAPI.csproj" 
+        |> DotNet.build setParams
+    )
+
+    Target.create "Sextant" (fun _ ->
+        "Sextant/Sextant.fsproj"
+        |> DotNet.build setParams
+    )
+
+
+Target.create "Build"      ignore
+Target.create "All"        ignore
 Target.create "RebuildAll" ignore
 
 "NativeAPI" ==> "Sextant" ==> "Build" ==> "All"
