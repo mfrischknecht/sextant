@@ -18,11 +18,21 @@ module App =
     [<STAThread>]
     let main argv = 
         let executingAssembly = Assembly.GetExecutingAssembly ()
+        let logWindow = Log.LogWindow()
 
         use trayIcon = 
             use stream = executingAssembly.GetManifestResourceStream("Sextant.Resources.TrayIcon.ico")
             let icon  = new System.Drawing.Icon (stream)
             new NotifyIcon(Icon = icon)
+
+        logWindow.Closing.Add (fun e ->
+            logWindow.Hide()
+            e.Cancel <- true)
+
+        trayIcon.DoubleClick.Add (fun _ ->
+            logWindow.Show()
+            logWindow.Activate() |> ignore
+            logWindow.Focus() |> ignore)
 
         let mutable hotkeys = None
 
