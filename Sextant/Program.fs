@@ -7,6 +7,7 @@ open System.Reflection
 open Sextant.NativeWindow
 open Sextant.WPF
 open Sextant.Hotkeys
+open Sextant.ContextMenu
 
 module App =
 
@@ -36,6 +37,14 @@ module App =
             logWindow.Show()
             logWindow.Activate() |> ignore
             logWindow.Focus() |> ignore)
+
+        trayIcon.ContextMenu <- [
+                MenuEntry ("Show Log...", (fun _ -> logWindow.Show()))
+                Divider
+                MenuEntry ("Exit",        (fun _ -> app.Shutdown()))
+            ] 
+            |> ContextMenu.create
+            |> Result.unwrap "Unable to create tray menu"
 
         let mutable hotkeys = None
 
