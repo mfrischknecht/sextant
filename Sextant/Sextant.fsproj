@@ -19,11 +19,13 @@
     <Compile Include="Map.fs" />
     <Compile Include="Disposable.fs" />
     <Compile Include="Exception.fs" />
-    <Compile Include="NativeErrors.fs" />
-    <Compile Include="Process.fs" />
     <Compile Include="Geometry.fs" />
     <Compile Include="Rectangle.fs" />
     <Compile Include="Color.fs" />
+    <Compile Include="Text.fs" />
+    <Compile Include="NativeErrors.fs" />
+    <Compile Include="Log.fs" />
+    <Compile Include="Process.fs" />
     <Compile Include="WPF.fs" />
     <Compile Include="Desktop.fs" />
     <Compile Include="Monitor.fs" />
@@ -38,8 +40,6 @@
     <Compile Include="HighlightWindow.fs" />
     <Compile Include="Hotkeys.fs" />
     <Compile Include="JumpTargets.fs" />
-    <Compile Include="Text.fs" />
-    <Compile Include="Log.fs" />
     <Compile Include="Modes.fs" />
     <Compile Include="OverlayMode.fs" />
     <Compile Include="GridMode.fs" />
