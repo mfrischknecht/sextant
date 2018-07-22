@@ -1,4 +1,4 @@
-﻿namespace Sextant
+namespace Sextant
 
 open System
 open System.Windows
@@ -26,7 +26,7 @@ module WPF =
         bitmap.Save (stream, ImageFormat.Png)
         let image = BitmapImage ()
         image.BeginInit ()
-        image.CacheOption <- BitmapCacheOption.OnLoad
+        image.CacheOption  <- BitmapCacheOption.OnLoad
         image.StreamSource <- stream
         image.EndInit ()
         image

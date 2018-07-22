@@ -1,4 +1,4 @@
-﻿namespace Sextant
+namespace Sextant
 
 open System.Diagnostics
 
@@ -64,11 +64,9 @@ module JumpTargets =
 
             (dist, pid, handle.ToInt64()))
 
-
     let activate window =
         let result =
             use sync = window |> synchronize
-
             let minimized = window |> isMinimized
 
             Ok ()
