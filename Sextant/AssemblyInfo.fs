@@ -1,4 +1,4 @@
-namespace Sextant.AssemblyInfo
+﻿namespace Sextant
 
 open System.Reflection
 open System.Runtime.CompilerServices
@@ -8,11 +8,11 @@ open System.Runtime.InteropServices
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [<assembly: AssemblyTitle         ("Sextant")>]
-[<assembly: AssemblyDescription   ("")>]
+[<assembly: AssemblyDescription   ("Sextant -- Navigate Windows like in ye olden days!")>]
 [<assembly: AssemblyConfiguration ("")>]
 [<assembly: AssemblyCompany       ("")>]
 [<assembly: AssemblyProduct       ("Sextant")>]
-[<assembly: AssemblyCopyright     ("Copyright ©  2017")>]
+[<assembly: AssemblyCopyright     ("Copyright © Manuel Frischknecht 2017")>]
 [<assembly: AssemblyTrademark     ("")>]
 [<assembly: AssemblyCulture       ("")>]
 
