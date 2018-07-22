@@ -8,11 +8,12 @@
             "name": ".NET Core Launch (console)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "Build",
-            "program": "${workspaceRoot}/bin/Debug/netcoreapp2.0/Sextant.exe",
+            "preLaunchTask": "Build Debug Version",
+            "program": "${workspaceRoot}/Sextant/bin/Debug/net461/Sextant.exe",
             "args": [],
             "cwd": "${workspaceRoot}",
             "stopAtEntry": false,
+            // "console": "integratedTerminal"
             "console": "internalConsole"
         },
         {
