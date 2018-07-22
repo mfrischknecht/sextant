@@ -1,4 +1,4 @@
-﻿namespace Sextant
+namespace Sextant
 
 open System
 open System.Windows.Forms
@@ -17,20 +17,33 @@ module App =
     [<EntryPoint>]
     [<STAThread>]
     let main argv = 
+        let app = System.Windows.Application ()
         let executingAssembly = Assembly.GetExecutingAssembly ()
-        use trayIcon = new NotifyIcon()
-        do
+        let logWindow = Log.LogWindow()
+
+        Log.info "Setting up tray icon..." |> Log.log
+
+        use trayIcon = 
             use stream = executingAssembly.GetManifestResourceStream("Sextant.Resources.TrayIcon.ico")
             let icon  = new System.Drawing.Icon (stream)
-            trayIcon.Icon <- icon
+            new NotifyIcon(Icon = icon)
+
+        logWindow.Closing.Add (fun e ->
+            logWindow.Hide()
+            e.Cancel <- true)
+
+        trayIcon.DoubleClick.Add (fun _ ->
+            logWindow.Show()
+            logWindow.Activate() |> ignore
+            logWindow.Focus() |> ignore)
 
         let mutable hotkeys = None
-
-        let app = System.Windows.Application ()
 
         app.AsyncDispatch (fun _ ->
             Process.exitIfAlreadyRunning()
             trayIcon.Visible <- true
+
+            Log.info "Setting up global hotkeys..." |> Log.log
 
             let keybindings = [ 
                   ( (Key.VK_TAB, Modifier.Ctrl), 
@@ -49,7 +62,8 @@ module App =
             () ) |> ignore
 
         app.Exit.Add (fun _ ->
+            Log.info "shutting down..." |> Log.log
             trayIcon.Visible <- false 
-            trayIcon.Icon <- null )
+            trayIcon.Icon    <- null )
 
         app.Run ()

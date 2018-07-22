@@ -1,8 +1,9 @@
-﻿namespace Sextant
+namespace Sextant
 
 open System
 open System.Text
 open System.Diagnostics
+open System.Diagnostics.CodeAnalysis
 open System.Drawing
 open System.Runtime.InteropServices
 
@@ -47,9 +48,11 @@ module NativeWindow =
     type Window  = 
         { Handle: IntPtr }
 
+          [<SuppressMessage("NameConventions","*")>]
           static member fromHandle handle = 
             { Window.Handle = handle }
 
+          [<SuppressMessage("NameConventions","*")>]
           static member fromWPF window =
             { Window.Handle = window |> WPF.handle }
 
@@ -60,21 +63,57 @@ module NativeWindow =
               | 0u -> Error (NativeError.Last |> annotate "Failed to get thread id")
               | _  -> Ok (processId, threadId)
 
+          member this.GetWindowTitle () =
+              let handle = this.Handle
+              let length = Math.Max ((Windows.GetWindowTextLength handle), 1024)
+              let builder = new StringBuilder (length)
+              Windows.GetWindowText (handle, builder, length) |> ignore
+              builder.ToString()
+
+          member this.Descriptor =
+              let pid = 
+                this.GetProcessAndThreadIds() 
+                |> Option.ofResult
+                |> Option.map fst
+
+              let processName =
+                pid
+                |> Option.bind (int >> Process.getById >> Option.ofResult)
+                |> Option.bind (Process.name >> Option.nonEmptyString)
+
+              let title = 
+                  this.GetWindowTitle()
+                  |> Option.nonEmptyString
+
+              pid, processName, title
+
+          member this.Description =
+                let pid, name, title = this.Descriptor
+                let pid   = pid |> Option.map (fun p -> p.ToString()) |> Option.defaultValue "???"
+                let name  = name |> Option.defaultValue "<Unknown process name>"
+                let title = title |> Option.defaultValue "<Unknown window title>"
+                sprintf "[%s] %s | %s" pid name title
+
+          member internal this.AnnotateError message error =
+              error |> annotate (sprintf "Window \"%s\": %s" this.Description message)
+
           member this.AttatchToThread () =
               this.GetProcessAndThreadIds ()
               |> Result.bind (syncThreadInput Attach)
+              |> Result.mapError (this.AnnotateError "Failed to attach to thread")
 
           member this.DetachFromThread () =
               this.GetProcessAndThreadIds ()
               |> Result.bind (syncThreadInput Detach)
+              |> Result.mapError (this.AnnotateError "Failed to detach from thread")
 
           member this.SynchronizeThreadGuard () =
               let window = this
               let result = window.AttatchToThread ()
 
-              match result with
-              | Error error -> Console.Error.WriteLine (error |> text)
-              | _ -> ()
+              result 
+              |> Result.onError (Log.Entry.ofNativeError >> Log.log) 
+              |> ignore
 
               { new IDisposable with
                   member this.Dispose () =
@@ -96,18 +135,24 @@ module NativeWindow =
 
     type Window with member this.Children = children this
 
-    let ``process`` (window:Window) =
+    let findProcess (window:Window) =
         window.GetProcessAndThreadIds ()
+        |> Result.mapError (window.AnnotateError "Unable to query process id")
         |> Result.mapError ``exception``
         |> Result.bind (fst >> int >> Process.getById)
 
-    type Window with member this.Process = ``process`` this
+    type Window with member this.Process = findProcess this
 
     let placement (window:Window) =
         let mutable placement = Windows.Placement ()
         placement.length <- Marshal.SizeOf (placement)
-        if Windows.GetWindowPlacement (window |> handle, &placement) then Ok placement
-        else Error (NativeError.Last |> annotate "Failed to get window placement info")
+
+        match Windows.GetWindowPlacement (window |> handle, &placement) with
+        | true  -> placement |> Ok
+        | false ->
+            NativeError.Last
+            |> window.AnnotateError "Failed to get placement info"
+            |> Error
 
     let restoreBounds window =
         window 
@@ -117,26 +162,32 @@ module NativeWindow =
 
     let windowBounds window =
         let mutable rect = Windows.Rectangle ()
-        if Windows.GetWindowRect (window |> handle, &rect) then Ok (rect |> rectangle)
-        else Error (NativeError.Last |> annotate "Failed to detect window dimensions")
+
+        Windows.GetWindowRect (window |> handle, &rect)
+        |> function
+        | true  -> Ok (rect |> rectangle)
+        | false ->
+            NativeError.Last
+            |> window.AnnotateError "Failed to detect boundaries"
+            |> Error
 
     let clientBounds (window:Window) =
         let mutable rect = Windows.Rectangle ()
-        if Windows.GetClientRect (window |> handle, &rect) then Ok (rect |> rectangle)
-        else Error (NativeError.Last |> annotate "Failed to detect window dimensions")
+
+        Windows.GetClientRect (window |> handle, &rect)
+        |> function 
+        | true  -> Ok (rect |> rectangle)
+        | false ->
+            NativeError.Last
+            |> window.AnnotateError "Failed to detect client boundaries"
+            |> Error
 
     let isVisible window =
         Windows.IsWindowVisible (window |> handle)
 
     type Window with member this.IsVisible = isVisible this
 
-    let title window =
-        let handle = window |> handle
-        let length = Math.Max ((Windows.GetWindowTextLength handle), 1024)
-        let builder = new StringBuilder (length)
-        Windows.GetWindowText (handle, builder, length) |> ignore
-        builder.ToString()
-
+    let title (window:Window) = window.GetWindowTitle()
     type Window with member this.Title = title this
 
     let hasTitle window = 
@@ -248,31 +299,37 @@ module NativeWindow =
     type Window with member this.ScreenPosition = screenPosition this
 
     let show flag window = 
-        if Windows.ShowWindowAsync(window |> handle, flag) then Ok ()
-        else Error (NativeError.Last |> annotate "Failed to show window")
+        match Windows.ShowWindowAsync(window |> handle, flag) with
+        | true -> Ok ()
+        | false ->
+            NativeError.Last
+            |> window.AnnotateError "Failed to show window"
+            |> Error
 
-    let restore =
-        // show  Windows.ShowWindowCommands.ShowDefault >> 
-        //     Result.mapError (annotate "Failed to restore window")
-
-        show  Windows.ShowWindowCommands.Restore >> 
-            Result.mapError (annotate "Failed to restore window")
+    let restore window =
+        window
+        |> show Windows.ShowWindowCommands.Restore
+        |> Result.mapError (window.AnnotateError "Failed to restore window")
 
     let toForeground window =
-        if window |> handle |> Windows.SetForegroundWindow then Ok ()
-        else Error (NativeError.Last |> annotate "Failed to send window to the foreground")
+        match window |> handle |> Windows.SetForegroundWindow with
+        | true -> Ok ()
+        | false ->
+            NativeError.Last
+            |> window.AnnotateError "Failed to send window to the foreground"
+            |> Error
 
     let focus window =
         match window |> handle |> Windows.SetFocus |> int with
-        | 0 -> Error (NativeError.Last |> annotate "Failed to focus window")
+        | 0 -> NativeError.Last |> window.AnnotateError "Failed to focus window" |> Error
         | _ -> Ok ()
 
     let activate window =
         match window |> handle |> Windows.SetActiveWindow |> int with
-        | 0 -> Error (NativeError.Last |> annotate "Failed to activate window")
+        | 0 -> NativeError.Last |> window.AnnotateError "Failed to activate window" |> Error
         | _ -> Ok ()
         
-    let placeBelow reference window =
+    let private moveBelowReferenceWindow reference window =
         let flags = 
             NativeAPI.Windows.SetWindowPosFlags.IgnoreMove    |||
             NativeAPI.Windows.SetWindowPosFlags.IgnoreResize  |||
@@ -280,28 +337,24 @@ module NativeWindow =
             NativeAPI.Windows.SetWindowPosFlags.AsynchronousWindowPosition
 
         use sync = window |> synchronize
+        let hWin = window    |> handle
+        let hRef = reference |> handle
 
-        let window    = window    |> handle
-        let reference = reference |> handle
-        if NativeAPI.Windows.SetWindowPos (window, reference, 0, 0, 0, 0, flags) then Ok ()
-        else Error (NativeError.Last |> annotate "Failed to change window z position")
+        match NativeAPI.Windows.SetWindowPos (hWin, hRef, 0, 0, 0, 0, flags) with
+        | true -> Ok ()
+        | false ->
+            NativeError.Last
+            |> window.AnnotateError "Failed to change window z position"
+            |> Error
+
+    let placeBelow reference window =
+        window |> moveBelowReferenceWindow reference
+        |> Result.mapError (window.AnnotateError "Unable to place below reference window")
 
     let placeAbove reference window =
-        let flags = 
-            NativeAPI.Windows.SetWindowPosFlags.IgnoreMove    |||
-            NativeAPI.Windows.SetWindowPosFlags.IgnoreResize  |||
-            NativeAPI.Windows.SetWindowPosFlags.DoNotActivate |||
-            NativeAPI.Windows.SetWindowPosFlags.AsynchronousWindowPosition
-
-        use sync = window |> synchronize
-
-        let window    = window    |> handle
-        let reference = reference |> handle
-        let result1 = NativeAPI.Windows.SetWindowPos (window, reference, 0, 0, 0, 0, flags)
-        if not result1 then Error (NativeError.Last |> annotate "Failed to change window z position")
-        else
-            if NativeAPI.Windows.SetWindowPos (reference, window, 0, 0, 0, 0, flags) then Ok ()
-            else Error (NativeError.Last |> annotate "Failed to change window z position")
+        (window |> moveBelowReferenceWindow reference)
+        |> Result.map (fun _ -> reference |> moveBelowReferenceWindow window)
+        |> Result.mapError (window.AnnotateError "Unable to place above reference window")
 
     let desktopWindow =
         Windows.GetDesktopWindow ()
@@ -332,10 +385,12 @@ module NativeWindow =
 
     let parent window =
         let handle = window |> handle |> Windows.GetParent
+
         match handle |> int with
-        | 0 -> Error (NativeError.Last |> annotate "Failed to get window parent")
+        | 0 -> NativeError.Last |> window.AnnotateError "Failed to get window parent" |> Error
         | _ -> handle |> Window.fromHandle |> Result.Ok
 
+    [<SuppressMessage("NameConventions","*")>]
     type WindowEvent =
         | EVENT_MIN                                    = 0x00000001
         | EVENT_MAX                                    = 0x7FFFFFFF

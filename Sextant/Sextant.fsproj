@@ -18,10 +18,14 @@
     <Compile Include="Seq.fs" />
     <Compile Include="Map.fs" />
     <Compile Include="Disposable.fs" />
-    <Compile Include="NativeErrors.fs" />
-    <Compile Include="Process.fs" />
+    <Compile Include="Exception.fs" />
     <Compile Include="Geometry.fs" />
     <Compile Include="Rectangle.fs" />
+    <Compile Include="Color.fs" />
+    <Compile Include="Text.fs" />
+    <Compile Include="NativeErrors.fs" />
+    <Compile Include="Log.fs" />
+    <Compile Include="Process.fs" />
     <Compile Include="WPF.fs" />
     <Compile Include="Desktop.fs" />
     <Compile Include="Monitor.fs" />

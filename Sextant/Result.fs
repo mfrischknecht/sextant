@@ -34,3 +34,8 @@ module Result =
         with
         | ex -> Error ex
 
+    let unwrap text = 
+        function
+        | Ok x -> x
+        | Error e -> sprintf "Logic error: unexpected error result: %s (Error: %A)" text e |> failwith
+

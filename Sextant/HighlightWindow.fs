@@ -17,18 +17,39 @@ module HighlightWindow =
     type WindowHighlight(window) as this =
         inherit WindowOverlay(window)
 
+        static let bg =
+            "#C8000000" 
+            |> Color.parse 
+            |> Result.unwrap "Color parsing failed" 
+            |> SolidColorBrush
+
+        static let fromColor =
+            "#FF2972e8"
+            |> Color.parse 
+            |> Result.unwrap "Color parsing failed" 
+            |> Nullable
+
+        static let toColor =
+            "#002972e8"
+            |> Color.parse 
+            |> Result.unwrap "Color parsing failed" 
+            |> Nullable
+
+        static let duration = 500.0 |> TimeSpan.FromMilliseconds |> Duration
+
         do
-            let brush = (byte 200, byte 0, byte 0, byte 0) |> Windows.Media.Color.FromArgb |> Windows.Media.SolidColorBrush
-            this.Background <- brush
+            this.Background <- bg
 
             NameScope.SetNameScope(this, NameScope ())
-            this.RegisterName("brush",brush)
+            this.RegisterName("brush",bg)
 
-            let animation = ColorAnimation ()
-            animation.From <- Colors.Green       |> Nullable
-            animation.To   <- Colors.Transparent |> Nullable
-            animation.Duration <- TimeSpan.FromMilliseconds(500.0) |> Duration
-            animation.AutoReverse <- false
+            let animation = 
+                ColorAnimation (
+                    From        = fromColor, 
+                    To          = toColor, 
+                    Duration    = duration, 
+                    AutoReverse = false)
+
             animation.Completed.Add (fun _ -> this.Close ())
 
             let storyboard = Storyboard ()

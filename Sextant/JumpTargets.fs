@@ -1,13 +1,11 @@
-﻿namespace Sextant
+namespace Sextant
 
-open System
 open System.Diagnostics
 
 open Sextant.Rectangle
 open Sextant.NativeWindow
 open Sextant.Process
 open Sextant.Workspace
-open System.Windows.Forms
 
 module JumpTargets =
     let currentProcess = Process.GetCurrentProcess ()
@@ -23,7 +21,7 @@ module JumpTargets =
             >> Seq.filter (windowClass >> (isIn ignoredClasses) >> (not))
             >> Seq.filter (windowBounds >> Result.defaultValue Rectangle.None >> area >> ((<) 0.0))
             >> Seq.filter (fun w ->
-                let proc = w |> ``process`` |> Option.ofResult
+                let proc = w.Process |> Option.ofResult
                 let pid = proc |> Option.map id        |> Option.defaultValue -1
                 let sid = proc |> Option.map sessionId |> Option.defaultValue -1
                 let keep = pid <> currentProcess.Id && sid = currentProcess.SessionId
@@ -58,20 +56,17 @@ module JumpTargets =
                 |> Result.defaultValue infinity
 
             let pid = 
-                window 
-                |> NativeWindow.process 
-                |> Result.map Process.id 
+                window.Process
+                |> Result.map (fun p -> p.Id)
                 |> Result.defaultValue 0
 
             let handle = window |> NativeWindow.handle
 
             (dist, pid, handle.ToInt64()))
 
-
     let activate window =
         let result =
             use sync = window |> synchronize
-
             let minimized = window |> isMinimized
 
             Ok ()
