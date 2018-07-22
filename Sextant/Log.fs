@@ -100,12 +100,13 @@ module Log =
 
         static let windowsMonitor = Object ()
         static let mutable windows = ImmutableArray.Create ()
+
         static let severityColors = 
             [ (Error,   "#FFFF6666")
               (Warning, "#FFFFE866") 
               (Info,    "#00000000") ] 
             |> Seq.map (fun (severity,color) -> 
-                (severity, ColorConverter.ConvertFromString color :?> Color |> SolidColorBrush))
+                (severity, color |> Color.parse |> Result.unwrap "Color parsing failed" |> SolidColorBrush))
             |> Map
 
         let scrollview = ScrollViewer ()

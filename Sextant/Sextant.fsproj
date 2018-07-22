@@ -23,6 +23,7 @@
     <Compile Include="Process.fs" />
     <Compile Include="Geometry.fs" />
     <Compile Include="Rectangle.fs" />
+    <Compile Include="Color.fs" />
     <Compile Include="WPF.fs" />
     <Compile Include="Desktop.fs" />
     <Compile Include="Monitor.fs" />
