@@ -57,6 +57,7 @@ let exceptionChain (ex:System.Exception) =
 
 let build () =
     try 
+        Trace.trace "Building!"
         Target.runOrDefaultWithArguments "All"
     with
     | ex -> 
@@ -66,17 +67,42 @@ let build () =
         |> Seq.iter (fun e -> 
             Trace.traceError e.Message)
 
+type Message =
+    | StartBuild of System.DateTime
+    | Exit
+
 if args |> Seq.contains "--watch" |> not then
     build ()
 
 else
-    Trace.trace "Setting up file system watcher..."
+    let now () = System.DateTime.Now
 
-    use watcher = 
-        !! "**/.*proj" ++ "**/*.fs" ++ "**/*.cs"
-        |> ChangeWatcher.run (ignore >> build)
+    let buildAgent = MailboxProcessor.Start (fun input ->
+        async {
+            Trace.trace "Build agent started."
+
+            let mutable running = true
+            let mutable lastBuild = System.DateTime.MinValue
+            while running do
+                let! message = input.Receive()
+                match message with
+                | Exit -> running <- false
+                | StartBuild ts when lastBuild < ts-> 
+                    lastBuild <- now()
+                    build ()
+                | _ -> () })
+
+    let triggerBuild () = now () |> StartBuild |> buildAgent.Post
 
     Trace.trace "Starting initial build..."
-    build ()
+    triggerBuild()
+
+    Trace.trace "Setting up file system watcher..."
+    use watcher = 
+        !! "**/.*proj" ++ "**/*.fs" ++ "**/*.cs"
+        |> ChangeWatcher.run (fun _ ->
+            Trace.trace "File changes detected! Triggering Build..."
+            triggerBuild())
 
     System.Console.ReadLine() |> ignore
+    buildAgent.Post Exit

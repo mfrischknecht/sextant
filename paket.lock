@@ -7,6 +7,7 @@ NUGET
 GROUP Build
 NUGET
   remote: https://api.nuget.org/v3/index.json
+    FSharp.Core (4.3.4) - restriction: || (>= net46) (>= netstandard2.0)
     Fake.Core.CommandLineParsing (5.2) - restriction: || (>= net46) (>= netstandard2.0)
       FParsec (>= 1.0.3) - restriction: || (>= net46) (>= netstandard1.6)
       FSharp.Core (>= 4.3.4) - restriction: || (>= net46) (>= netstandard1.6)

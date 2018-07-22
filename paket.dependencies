@@ -7,6 +7,7 @@ nuget System.Collections.Immutable
 // [ FAKE GROUP ]
 group Build
     source https://api.nuget.org/v3/index.json
+    nuget FSharp.Core
     nuget Fake.DotNet.Cli
     nuget Fake.IO.FileSystem
     nuget Fake.Core.Target
