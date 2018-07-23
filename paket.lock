@@ -1,13 +1,12 @@
 RESTRICTION: >= net461
 NUGET
   remote: https://www.nuget.org/api/v2
-    FSharp.Core (4.5.1)
-    System.Collections.Immutable (1.5)
+    FSharp.Core (4.3.4)
 
 GROUP Build
+STORAGE: NONE
 NUGET
   remote: https://api.nuget.org/v3/index.json
-    Fake.Core (4.3.4) - restriction: || (>= net46) (>= netstandard2.0)
     Fake.Core.CommandLineParsing (5.2) - restriction: || (>= net46) (>= netstandard2.0)
       FParsec (>= 1.0.3) - restriction: || (>= net46) (>= netstandard1.6)
       FSharp.Core (>= 4.3.4) - restriction: || (>= net46) (>= netstandard1.6)
@@ -843,5 +842,3 @@ NUGET
       System.Text.Encoding (>= 4.3) - restriction: && (< monoandroid) (< monotouch) (< net46) (>= netstandard1.3) (< xamarinios) (< xamarinmac) (< xamarintvos) (< xamarinwatchos)
       System.Threading (>= 4.3) - restriction: && (< monoandroid) (< monotouch) (< net46) (>= netstandard1.3) (< xamarinios) (< xamarinmac) (< xamarintvos) (< xamarinwatchos)
       System.Xml.ReaderWriter (>= 4.3) - restriction: && (< monoandroid) (< monotouch) (< net46) (>= netstandard1.3) (< xamarinios) (< xamarinmac) (< xamarintvos) (< xamarinwatchos)
-
-

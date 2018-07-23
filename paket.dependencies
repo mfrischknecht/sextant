@@ -5,6 +5,7 @@ nuget FSharp.Core
 
 // [ FAKE GROUP ]
 group Build
+    storage: none
     source https://api.nuget.org/v3/index.json
     nuget FSharp.Core
     nuget Fake.Core.Target
