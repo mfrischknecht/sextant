@@ -90,10 +90,13 @@ module Thumbnails =
                 thumbnail <- thumb |> Option.ofResult
 
             let dstRect = Rectangle.None |> withSize (this.ActualWidth,this.ActualHeight)
-            thumbnail.Value.Properties <- 
-                { Properties.None with 
-                    Visible     = Some true
-                    Destination = Some dstRect }
+
+            thumbnail
+            |> Option.iter (fun thumbnail -> 
+                thumbnail.Properties <- 
+                    { Properties.None with 
+                        Visible     = Some true
+                        Destination = Some dstRect })
 
         do
             this.IsVisibleChanged.Add (fun _ -> updateThumbnail ())

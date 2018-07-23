@@ -474,20 +474,45 @@ module NativeWindow =
     //     | OBJID_QUERYCLASSNAMEIDX = 0xFFFFFFF4l
     //     | OBJID_NATIVEOM          = 0xFFFFFFF0l
 
-    let private windowEvent = new Event<_> ()
-    let WindowEvent = windowEvent.Publish
+        // None
 
-    let private onWinEvent 
-        (hook:nativeint) (eventType:uint32) (windowHandle:nativeint) 
-        (objectId:int) (childId:int) (eventThread:uint32) (timestamp:uint32) =
-            if objectId = 0 && childId = 0 then
-                let window = { Window.Handle = windowHandle }
-                let event:WindowEvent = eventType |> int |> enum
-                windowEvent.Trigger (window, event)
+    type WindowEventHook() =
+        static let windowEvent = new Event<_> ()
+        static let onWinEvent 
+            (hook:nativeint) (eventType:uint32) (windowHandle:nativeint) 
+            (objectId:int) (childId:int) (eventThread:uint32) (timestamp:uint32) =
+                if objectId = 0 && childId = 0 then
+                    let window = { Window.Handle = windowHandle }
+                    let event:WindowEvent = eventType |> int |> enum
+                    windowEvent.Trigger (window, event)
+        static let eventDelegate = new Windows.WinEventCallback(onWinEvent)
 
-    let private eventDelegate = new Windows.WinEventCallback(onWinEvent)
+        static let sync = Object()
+        static let mutable refCount = 0
+        static let mutable hook = None
 
-    let hook = 
-        Windows.SetWinEventHook 
-            (Windows.EVENT_MIN, Windows.EVENT_MAX, IntPtr.Zero, 
-            eventDelegate, 0u, 0u, Windows.WINEVENT_OUTOFCONTEXT) 
+        let mutable isDisposed = false
+
+        do
+            lock sync (fun _ ->
+                refCount <- refCount+1
+                if refCount = 1 then
+                    hook <-
+                        Windows.SetWinEventHook 
+                            (Windows.EVENT_MIN, Windows.EVENT_MAX, IntPtr.Zero, 
+                            eventDelegate, 0u, 0u, Windows.WINEVENT_OUTOFCONTEXT) 
+                        |> Some)
+
+        member this.WindowEvent = windowEvent.Publish
+
+        interface IDisposable with
+            member this.Dispose () =
+                if not isDisposed then
+                    isDisposed <- true
+                    lock sync (fun _ ->
+                        refCount <- refCount-1
+                        if refCount = 0 then
+                            match hook.Value |> Windows.UnhookWinEvent with
+                            | false -> NativeError.Last |> Log.Entry.ofNativeError |> Log.log
+                            | true  -> ()
+                            hook <- None)

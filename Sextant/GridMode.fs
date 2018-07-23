@@ -322,6 +322,8 @@ module GridMode =
                             this |> Window.fromWPF |> focus |> ignore
                     | _ -> () )
 
+        let windowEventHook = new WindowEventHook()
+
         do
             let transparent = (byte 1, byte 0, byte 0, byte 0) |> Windows.Media.Color.FromArgb |> Windows.Media.SolidColorBrush
             this.Background <- transparent
@@ -348,16 +350,18 @@ module GridMode =
 
                     this.Dispatcher.InvokeAsync (fun _ ->
                         this.Activate () |> ignore 
-                        WindowEvent.AddHandler windowEventHandler
+                        windowEventHook.WindowEvent.AddHandler windowEventHandler
                         ) |> ignore
 
                 else
-                    WindowEvent.RemoveHandler windowEventHandler
+                    windowEventHook.WindowEvent.RemoveHandler windowEventHandler
                     for thumb, labels in Seq.zip thumbOverlays labelOverlays do
                         thumb .Value.Visibility <- Visibility.Hidden
                         labels.Value.Visibility <- Visibility.Hidden )
 
             this.Closed.Add (fun _ ->
+                closed <- true
+                windowEventHook |> Disposable.dispose
                 for thumb, labels in Seq.zip thumbOverlays labelOverlays do
                     thumb .Value.Close ()
                     labels.Value.Close () )
@@ -384,7 +388,6 @@ module GridMode =
             member this.Exit () =
                 if not closed then
                     closed <- true
-                    WindowEvent.RemoveHandler windowEventHandler
                     this.Close ()
 
     let start() =
