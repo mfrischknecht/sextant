@@ -1,0 +1,44 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build: Watch Filesystem Changes",
+            "command": "${workspaceRoot}/fake.sh",
+            "windows": {
+                "command": "${workspaceRoot}/fake.cmd"
+            },
+            "args": [ "build", "--", "--debug", "--watch" ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build Debug Version",
+            "command": "${workspaceRoot}/fake.sh",
+            "windows": {
+                "command": "${workspaceRoot}/fake.cmd"
+            },
+            "args": [ "build", "--", "--debug" ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build Release Version",
+            "command": "${workspaceRoot}/fake.sh",
+            "windows": {
+                "command": "${workspaceRoot}/fake.cmd"
+            },
+            "args": [ "build" ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

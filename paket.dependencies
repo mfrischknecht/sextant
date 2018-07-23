@@ -1,0 +1,15 @@
+source https://www.nuget.org/api/v2
+
+framework: >= net461
+nuget FSharp.Core
+
+// [ FAKE GROUP ]
+group Build
+    storage: none
+    source https://api.nuget.org/v3/index.json
+    nuget FSharp.Core
+    nuget Fake.Core.Target
+    nuget Fake.Core.Process
+    nuget Fake.IO.FileSystem
+    nuget Fake.DotNet.Cli
+    nuget Fake.DotNet.MsBuild
