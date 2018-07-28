@@ -13,6 +13,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="rc.fsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Result.fs" />
     <Compile Include="Option.fs" />
