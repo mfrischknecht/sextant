@@ -25,6 +25,7 @@
     <Compile Include="Color.fs" />
     <Compile Include="Text.fs" />
     <Compile Include="NativeErrors.fs" />
+    <Compile Include="Error.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Process.fs" />
     <Compile Include="WPF.fs" />

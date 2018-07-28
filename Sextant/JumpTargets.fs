@@ -6,6 +6,7 @@ open Sextant.Rectangle
 open Sextant.NativeWindow
 open Sextant.Process
 open Sextant.Workspace
+open Sextant.NativeErrors
 
 module JumpTargets =
     let currentProcess = Process.GetCurrentProcess ()
@@ -86,3 +87,6 @@ module JumpTargets =
             else 
                 window |> windowBounds )
         |> Result.bind (Rectangle.center >> Mouse.setPos)
+        |> Result.bind (Rectangle.center >> Mouse.setPos)
+        |> Result.mapError (annotate "Failed to activate window")
+        |> Result.mapError Error.ofNativeError

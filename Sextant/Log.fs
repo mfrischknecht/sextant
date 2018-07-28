@@ -20,11 +20,7 @@ module Log =
         | Warning
         | Error
 
-    type Source =
-        | NativeError of NativeError
-        | Exception   of Exception
-
-    type Entry private (shortText:Line, severity: Severity, additionalText:string option, source:Source option) =
+    type Entry private (severity: Severity, shortText:Line, additionalText:string option, source:Error.Error option) =
         let timestamp      = DateTime.Now
 
         member this.Timestamp = timestamp
@@ -49,15 +45,8 @@ module Log =
                 | _ -> invalidArg "obj" "Cannot compare with different types"
 
         [<SuppressMessage("NameConventions","*")>]
-        static member ofException (error:Exception) =
-            let text = 
-                error 
-                |> Exception.chain
-                |> Seq.map (fun e -> 
-                    sprintf "%s: %s\r\n%s" (e.GetType().Name) e.Message (e.StackTrace.ToString()))
-                |> Seq.appendTo [ error.Message; "Stack trace:" ]
-                |> String.concat "\r\n\r\n"
-
+        static member ofError (error:Error.Error) =
+            let text = error.Message
             let lines = text |> Lines.split 
             let head = lines |> Seq.head
             let tail = 
@@ -66,25 +55,10 @@ module Log =
                 |> Option.nonEmptySeq 
                 |> Option.map Lines.concat
 
-            Entry(head, Error, tail, error |> Source.Exception |> Some)
+            Entry(Error, head, tail, error |> Some)
 
         [<SuppressMessage("NameConventions","*")>]
-        static member ofNativeError (error:NativeError) =
-            let info = 
-                error.Annotations @ [ error.ErrorText ]
-                |> Seq.map Line.sequence
-                |> Array.concat
-
-            let shortText = info |> Seq.head
-            let text = 
-                info |> Seq.tail 
-                |> Option.nonEmptySeq
-                |> Option.map Lines.concat
-
-            Entry(shortText, Error, text, error |> Source.NativeError |> Some)
-
-        [<SuppressMessage("NameConventions","*")>]
-        static member simple severity text =
+        static member ofText severity text =
             let lines = text |> Line.sequence
             let headline = lines |> Seq.head
             let text = 
@@ -92,7 +66,7 @@ module Log =
                 |> Option.nonEmptySeq
                 |> Option.map Lines.concat
 
-            Entry(headline, severity, text, None)
+            Entry(severity, headline, text, None)
 
     type LogWindow() as this =
         inherit Window()
@@ -204,9 +178,9 @@ module Log =
             let windows = lock windowsMonitor (fun _ -> windows)
             for window in windows do window.Add entry
 
-    let info    = Entry.simple Severity.Info
-    let warning = Entry.simple Severity.Warning
-    let error   = Entry.simple Severity.Error
+    let info    = Entry.ofText Severity.Info
+    let warning = Entry.ofText Severity.Warning
+    let error   = Entry.ofText Severity.Error
 
     let logToWriter (writer:IO.TextWriter) (entry:Entry) =
         let severity = entry.Severity

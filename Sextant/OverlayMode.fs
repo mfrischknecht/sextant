@@ -164,7 +164,8 @@ module OverlayMode =
                 this.Close()
 
                 child |> window |> JumpTargets.activate 
-                |> Result.onError (Log.Entry.ofNativeError >> Log.log) 
+                |> Result.mapError Log.Entry.ofError
+                |> Result.onError  Log.log
                 |> ignore 
                 
                 child |> window |> highlight )

@@ -50,7 +50,10 @@ module Hotkeys =
                 event.Source.Dispose ()
                 () |> Result.Ok
             else 
-                NativeError.Last |> annotate "Failed to unregister a global hotkey" |> Result.Error
+                NativeError.Last 
+                |> annotate "Failed to unregister a global hotkey" 
+                |> Error.ofNativeError
+                |> Result.Error
 
     type HotkeyHandler(window) =
         let mutable observers = [| |] |> Map
@@ -62,14 +65,17 @@ module Hotkeys =
                 | Some event ->
                     event 
                     |> HotkeyEvent.unregister 
-                    |> Result.onError (Log.Entry.ofNativeError >> Log.log) 
+                    |> Result.mapError Log.Entry.ofError
+                    |> Result.onError  Log.log
                     |> ignore
+
                     observers <- observers |> Map.remove keyCombination
                 | _ -> ()
 
         member this.Register keyCombination callback =
             window 
             |> HotkeyEvent.register keyCombination
+            |> Result.mapError Error.ofNativeError
             |> Result.map (fun event ->
                 event.Event.Publish.Add callback
                 observers <- observers |> Map.add keyCombination event
@@ -87,6 +93,8 @@ module Hotkeys =
         callbacks
         |> Seq.map (fun (keys,callback) -> 
             handler.Register keys callback 
-            |> Result.onError (Log.Entry.ofNativeError >> Log.log))
+            |> Result.mapError Log.Entry.ofError
+            |> Result.onError  Log.log
+            |> ignore)
         |> Seq.iter ignore
         handler
