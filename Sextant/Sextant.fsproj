@@ -28,6 +28,7 @@
     <Compile Include="Error.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Process.fs" />
+    <Compile Include="Script.fs" />
     <Compile Include="WPF.fs" />
     <Compile Include="Desktop.fs" />
     <Compile Include="Monitor.fs" />
