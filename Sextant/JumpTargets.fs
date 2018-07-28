@@ -87,6 +87,5 @@ module JumpTargets =
             else 
                 window |> windowBounds )
         |> Result.bind (Rectangle.center >> Mouse.setPos)
-        |> Result.bind (Rectangle.center >> Mouse.setPos)
         |> Result.mapError (annotate "Failed to activate window")
         |> Result.mapError Error.ofNativeError
