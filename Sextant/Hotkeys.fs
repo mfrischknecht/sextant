@@ -18,8 +18,10 @@ module Hotkeys =
     let mutable private staticId = 0
     let private generateId () = Interlocked.Increment (&staticId)
 
+    type HotkeyCombination = Keyboard.HotkeyKey * Keyboard.HotkeyModifier
+
     type private HotkeyEvent private (id,window,key,modifiers) =
-        let event = Event<_> ()
+        let event = Event<HotkeyCombination> ()
         let hook = HwndSourceHook(fun _ message param1 _ _ ->
             if message = Keyboard.WM_HOTKEY && param1.ToInt32() = id then
                 event.Trigger (key, modifiers) 
@@ -35,8 +37,9 @@ module Hotkeys =
         member this.Event = event
 
         [<SuppressMessage("NameConventions","*")>]
-        static member register (key,modifiers) window =
+        static member register (combination:HotkeyCombination) window =
             let id = generateId ()
+            let key, modifiers = combination
             let success = Keyboard.RegisterHotKey (window |> handle, id, modifiers, key)
             if success then 
                 (id,window,key,modifiers) |> HotkeyEvent |> Result.Ok
