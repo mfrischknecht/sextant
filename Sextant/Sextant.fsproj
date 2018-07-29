@@ -13,6 +13,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="rc.fsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Result.fs" />
     <Compile Include="Option.fs" />
@@ -25,8 +28,10 @@
     <Compile Include="Color.fs" />
     <Compile Include="Text.fs" />
     <Compile Include="NativeErrors.fs" />
+    <Compile Include="Error.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Process.fs" />
+    <Compile Include="Script.fs" />
     <Compile Include="WPF.fs" />
     <Compile Include="Desktop.fs" />
     <Compile Include="Monitor.fs" />
