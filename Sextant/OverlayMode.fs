@@ -208,12 +208,9 @@ module OverlayMode =
         interface Mode with
             member this.Exit () =
                 this.Close ()
-    
-    let start() =
+
+    let start windows =
         let mode = MainOverlay ()
-
-        let windows = JumpTargets.findWindows () |> Array.ofSeq
-
         mode.Show ()
         mode.UpdateThumbnails windows
         mode.Activate() |> ignore 

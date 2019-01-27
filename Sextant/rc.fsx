@@ -4,19 +4,43 @@ open Sextant
 open Sextant.App
 open Sextant.ContextMenu
 open Sextant.Hotkeys
-
-"Foobar"    |> Log.info |> Log.log
-"Hi there!" |> Log.info |> Log.log
+open Sextant.JumpTargets
+open Sextant.NativeWindow
+open Sextant.Process
 
 let init (app:Sextant) =
+    "Starting `rc.fsx`..." |> Log.info |> Log.log
+
     // app.Menu <- [
-    //     MenuEntry ("Woot...", (fun _ -> "Woot" |> Log.info |> Log.log))
+    //     MenuEntry ("Hi there! :)", (fun _ -> "Woot" |> Log.info |> Log.log))
     // ]
 
+    let blacklist = [
+      // "explorer"
+    ]
+
+    let findWindows () =
+        let windows =
+            JumpTargets.findWindows ()
+            |> Array.filter (fun w ->
+                let processName =
+                  w.Process
+                  |> Result.map name
+                  |> Option.ofResult
+                  |> Option.defaultValue ""
+
+                blacklist |> List.contains processName |> not)
+
+        windows
+
     app.Hotkeys <- [
-        ( (Key.VK_TAB, Modifier.Ctrl), 
-          (fun _ -> Modes.enterMode OverlayMode.start ) )
+        ( (Key.VK_TAB, Modifier.Ctrl),
+          (fun _ ->
+               let startMode = findWindows >> OverlayMode.start
+               Modes.enterMode startMode ) )
 
         ( (Key.VK_TAB, Modifier.Ctrl ||| Modifier.Shift),
-          (fun _ -> Modes.enterMode GridMode.start ) )
+          (fun _ ->
+               let startMode = findWindows >> GridMode.start
+               Modes.enterMode startMode ) )
     ]
