@@ -15,6 +15,10 @@ open Sextant.ContextMenu
 open System.Resources
 
 module App =
+    let applicationDirectory =
+        Assembly.GetEntryAssembly().Location
+        |> Path.GetDirectoryName
+
     type IndicatorForm =
         { OriginalWindow:Window
           Form:Form }
@@ -95,6 +99,9 @@ module App =
     [<EntryPoint>]
     [<STAThread>]
     let main argv = 
+        applicationDirectory
+        |> Directory.SetCurrentDirectory
+
         let app = Sextant()
 
         let rcFile = 
