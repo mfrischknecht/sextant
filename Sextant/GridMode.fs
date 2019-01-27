@@ -20,16 +20,19 @@ module GridMode =
         let width  = Math.Max (1.0, width )
         let height = Math.Max (1.0, height)
 
-        let configurations =
-            Seq.init numCells ((+) 1)
-            |> Seq.map (fun rows ->
-                let cols = int (Math.Ceiling ((float numCells)/(float rows)))
-                let w = width  / (float cols)
-                let h = height / (float rows)
-                let ratio = Math.Max (w/h,h/w)
-                (ratio, (cols, rows)) )
+        if numCells > 0 then
+            let configurations =
+                Seq.init numCells ((+) 1)
+                |> Seq.map (fun rows ->
+                    let cols = int (Math.Ceiling ((float numCells)/(float rows)))
+                    let w = width  / (float cols)
+                    let h = height / (float rows)
+                    let ratio = Math.Max (w/h,h/w)
+                    (ratio, (cols, rows)) )
 
-        configurations |> Seq.minBy fst |> snd
+            configurations |> Seq.minBy fst |> snd
+        else
+            (0,0)
 
     let centerIn dst src =
         let dstW, dstH = dst |> size
@@ -210,43 +213,44 @@ module GridMode =
             grid.ColumnDefinitions.Clear()
             grid.RowDefinitions   .Clear()
 
-            let width  = Math.Max(this.ActualWidth,  this.Width )
-            let height = Math.Max(this.ActualHeight, this.Height)
+            if (cols*rows) > 0 then
+                let width  = Math.Max(this.ActualWidth,  this.Width )
+                let height = Math.Max(this.ActualHeight, this.Height)
 
-            let cellWidth  = cols |> float |> ((/) 1.0) |> ((*) width ) |> GridLength
-            for i in 1..cols do 
-                let column = ColumnDefinition ()
-                column.Width <- cellWidth
-                grid.ColumnDefinitions.Add column
+                let cellWidth  = cols |> float |> ((/) 1.0) |> ((*) width ) |> GridLength
+                for i in 1..cols do
+                    let column = ColumnDefinition ()
+                    column.Width <- cellWidth
+                    grid.ColumnDefinitions.Add column
 
-            let cellHeight = rows |> float |> ((/) 1.0) |> ((*) height) |> GridLength
-            for i in 1..rows do
-                let row = RowDefinition ()
-                row.Height <- cellHeight
-                grid.RowDefinitions.Add row
+                let cellHeight = rows |> float |> ((/) 1.0) |> ((*) height) |> GridLength
+                for i in 1..rows do
+                    let row = RowDefinition ()
+                    row.Height <- cellHeight
+                    grid.RowDefinitions.Add row
 
-            cells <-
-                cells 
-                |> Seq.cat  (Seq.initInfinite (ignore >> CellControl))
-                |> Seq.take (cols*rows)
-                |> Array.ofSeq
+                cells <-
+                    cells
+                    |> Seq.cat  (Seq.initInfinite (ignore >> CellControl))
+                    |> Seq.take (cols*rows)
+                    |> Array.ofSeq
 
-            let cellPositions = permutations (Seq.init cols id) (Seq.init rows id) 
-            for (x,y), cell in Seq.zip cellPositions cells do
-                Grid.SetColumn (cell, x) |> ignore
-                Grid.SetRow    (cell, y) |> ignore
+                let cellPositions = permutations (Seq.init cols id) (Seq.init rows id) 
+                for (x,y), cell in Seq.zip cellPositions cells do
+                    Grid.SetColumn (cell, x) |> ignore
+                    Grid.SetRow    (cell, y) |> ignore
 
-            grid.Children.Clear ()
-            cells |> Seq.iter (grid.Children.Add >> ignore)
+                grid.Children.Clear ()
+                cells |> Seq.iter (grid.Children.Add >> ignore)
 
-            let data = 
-                data 
-                |> Seq.map Option.Some
-                |> Seq.cat (Seq.initInfinite (fun _ -> None)) 
-                |> Seq.take (cols*rows)
+                let data =
+                    data
+                    |> Seq.map Option.Some
+                    |> Seq.cat (Seq.initInfinite (fun _ -> None)) 
+                    |> Seq.take (cols*rows)
 
-            for data, cell in Seq.zip data cells do
-                cell.Data <- data
+                for data, cell in Seq.zip data cells do
+                    cell.Data <- data
 
         member this.ApplyUserInput input =
             cells 
@@ -277,11 +281,6 @@ module GridMode =
 
         let update () =
             userInput |> updateInput |> ignore
-            windows   <- 
-                JumpTargets.findWindows () 
-                |> JumpTargets.orderByPosition 
-                |> Array.ofSeq
-
             let numWindows = windows |> Seq.length
             let data =
                 windows
@@ -290,9 +289,9 @@ module GridMode =
                 |> Map
 
             for monitor in monitors do
+                let data = data.TryFind monitor |> Option.defaultValue Seq.empty
                 let thumbs = thumbOverlays.[monitor]
                 let labels = labelOverlays.[monitor]
-                let data = data.[monitor]
                 let windows = data |> Seq.map (fun d -> d.Window) |> Array.ofSeq
                 let monitorSize = monitor |> Monitor.bounds |> size 
                 let layout  = windows |> Seq.length |> layout monitorSize
@@ -303,18 +302,18 @@ module GridMode =
                 thumbOverlays |> Map.values |> Seq.map Window.fromWPF |> Array.ofSeq
                 labelOverlays |> Map.values |> Seq.map Window.fromWPF |> Array.ofSeq
                 [| this |> Window.fromWPF |]
-            ] 
+            ]
         let eventWindowBlacklist = eventWindowBlacklist |> Seq.collect id |> Array.ofSeq
 
-        let windowEventHandler =  
+        let windowEventHandler =
             Handler<_> (fun sender (window, event) ->
                 if not (eventWindowBlacklist |> Seq.contains window) then
                     // let isTopWindow = window |> parent |> Option.ofResult |> Option.isNone
                     // let windowOfInterest = windows |> Seq.contains window
                     // match isTopWindow && windowOfInterest, event with
                     match event with
-                    | WindowEvent.EVENT_OBJECT_HIDE 
-                    | WindowEvent.EVENT_OBJECT_SHOW 
+                    | WindowEvent.EVENT_OBJECT_HIDE
+                    | WindowEvent.EVENT_OBJECT_SHOW
                     | WindowEvent.EVENT_OBJECT_LOCATIONCHANGE -> 
                         update ()
                         if not this.IsFocused then
@@ -376,7 +375,8 @@ module GridMode =
                             this.Close()
 
                             data.Window |> JumpTargets.activate
-                            |> Result.onError (Log.Entry.ofNativeError >> Log.log)
+                            |> Result.mapError Log.Entry.ofError
+                            |> Result.onError  Log.log
                             |> ignore
 
                             data.Window |> highlight
@@ -384,14 +384,21 @@ module GridMode =
                         | _ -> () )
             update ()
 
+        member this.UpdateWindows newWindows =
+            windows <-
+                newWindows
+                |> JumpTargets.orderByPosition
+                |> Array.ofSeq
+
         interface Mode with
             member this.Exit () =
                 if not closed then
                     closed <- true
                     this.Close ()
 
-    let start() =
+    let start windows =
         let mode = Overlay ()
+        mode.UpdateWindows windows
         mode.UpdateOverlay () |> ignore
         mode.Show ()
         Some (mode :> Mode)

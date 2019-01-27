@@ -3,80 +3,126 @@ namespace Sextant
 open System
 open System.Windows.Forms
 open System.Reflection
+open System.IO
+
+open Microsoft.FSharp.Core
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Sextant.NativeWindow
 open Sextant.WPF
 open Sextant.Hotkeys
 open Sextant.ContextMenu
+open System.Resources
 
 module App =
+    let applicationDirectory =
+        Assembly.GetEntryAssembly().Location
+        |> Path.GetDirectoryName
+
     type IndicatorForm =
         { OriginalWindow:Window
           Form:Form }
 
-    [<EntryPoint>]
-    [<STAThread>]
-    let main argv = 
+    type Keys = Hotkeys.HotkeyCombination
+    type Callback = Keys -> Unit
+    type Keybinding = Keys * Callback
+
+
+    type Sextant() =
         let app = System.Windows.Application ()
         let executingAssembly = Assembly.GetExecutingAssembly ()
         let logWindow = Log.LogWindow()
+        do logWindow.Closing.Add (fun e -> logWindow.Hide(); e.Cancel <- true)
 
-        Log.info "Setting up tray icon..." |> Log.log
+        do "Setting up tray icon..." |> Log.info |> Log.log
 
-        use trayIcon = 
+        let trayIcon = 
             use stream = executingAssembly.GetManifestResourceStream("Sextant.Resources.TrayIcon.ico")
             let icon  = new System.Drawing.Icon (stream)
             new NotifyIcon(Icon = icon)
 
-        logWindow.Closing.Add (fun e ->
-            logWindow.Hide()
-            e.Cancel <- true)
-
-        trayIcon.DoubleClick.Add (fun _ ->
-            logWindow.Show()
-            logWindow.Activate() |> ignore
-            logWindow.Focus() |> ignore)
-
-        trayIcon.ContextMenu <- [
-                MenuEntry ("Show Log...", (fun _ -> logWindow.Show()))
-                Divider
-                MenuEntry ("Exit",        (fun _ -> app.Shutdown()))
-            ] 
-            |> ContextMenu.create
-            |> Result.unwrap "Unable to create tray menu"
+        let mutable publicMenu = [ ]
+        let privateMenu = [
+            Divider
+            MenuEntry ("Show Log...", (fun _ -> logWindow.Show()))
+            Divider
+            MenuEntry ("Exit",        (fun _ -> app.Shutdown()))
+        ]
+        let setMenu entries =
+            publicMenu <- entries |> List.ofSeq
+            trayIcon.ContextMenu <-  
+                publicMenu
+                |> Seq.prependTo privateMenu
+                |> ContextMenu.create
+                |> Result.unwrap "Unable to create tray menu"
 
         let mutable hotkeys = None
-
-        app.AsyncDispatch (fun _ ->
-            Process.exitIfAlreadyRunning()
-            trayIcon.Visible <- true
-
-            Log.info "Setting up global hotkeys..." |> Log.log
-
-            let keybindings = [ 
-                  ( (Key.VK_TAB, Modifier.Ctrl), 
-                    (fun _ -> Modes.enterMode OverlayMode.start ) )
-
-                  ( (Key.VK_TAB, Modifier.Ctrl ||| Modifier.Shift),
-                    (fun _ -> Modes.enterMode GridMode.start ) )
-                ]
-
+        let setHotkeys (keyBindings:Keybinding seq)  =
+            hotkeys |> Option.iter Disposable.dispose
             hotkeys <- 
-                Windows.Window ()
-                |> Window.fromWPF 
-                |> Hotkeys.register keybindings 
-                |> Option.Some
+                keyBindings
+                |> Option.nonEmptySeq
+                |> Option.map (fun keys ->
+                    Windows.Window ()
+                    |> Window.fromWPF
+                    |> Hotkeys.register keys)
+            ()
 
-            () ) |> ignore
+        let registerHotkeys keybindings =
+            app.AsyncDispatch (fun _ ->
+                Process.exitIfAlreadyRunning()
+                trayIcon.Visible <- true
+                () ) |> ignore
 
-        app.Exit.Add (fun _ ->
-            Log.info "shutting down..." |> Log.log
-            trayIcon.Visible <- false 
-            trayIcon.Icon    <- null )
+        do
+            setMenu []
+            app.Exit.Add (fun _ ->
+                Log.info "shutting down..." |> Log.log
+                trayIcon.Visible <- false 
+                trayIcon.Icon    <- null)
 
-        try
-            app.Run ()
-        with
-        | ex -> 
-            ex |> Log.Entry.ofException |> Log.log
-            -1
+        member this.Menu
+            with get ()    = publicMenu |> Seq.ofList
+            and  set value = setMenu value
+
+        member this.Hotkeys
+            with set combinations = setHotkeys combinations
+
+        member this.Run() =
+            try 
+                trayIcon.Visible <- true
+                app.Run () |> ignore |> Ok
+            with 
+            | ex -> 
+                ex |> Error.ofException |> Error
+
+    [<EntryPoint>]
+    [<STAThread>]
+    let main argv = 
+        applicationDirectory
+        |> Directory.SetCurrentDirectory
+
+        let app = Sextant()
+
+        let rcFile = 
+            Script.load "rc.fsx"
+            |> Result.bind (fun rc -> 
+                let publicStatic = BindingFlags.Public ||| BindingFlags.Static
+                let ``module`` = rc.Module
+                let method = ``module``.GetMethod("init",publicStatic)
+
+                try
+                    method.Invoke(null, [| app |]) |> ignore |> Ok
+                with
+                | ``exception`` -> 
+                    ``exception`` 
+                    |> Error.ofException 
+                    |> Error)
+
+        rcFile
+        |> Result.bind     app.Run
+        |> Result.mapError Log.Entry.ofError
+        |> Result.onError  Log.log
+        |> function
+        | Ok    _ ->  0
+        | Error _ -> -1

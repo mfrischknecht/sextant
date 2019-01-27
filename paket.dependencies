@@ -2,6 +2,7 @@ source https://www.nuget.org/api/v2
 
 framework: >= net461
 nuget FSharp.Core
+nuget FSharp.Compiler.Service
 
 // [ FAKE GROUP ]
 group Build

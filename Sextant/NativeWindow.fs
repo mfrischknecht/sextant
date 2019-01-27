@@ -112,7 +112,8 @@ module NativeWindow =
               let result = window.AttatchToThread ()
 
               result 
-              |> Result.onError (Log.Entry.ofNativeError >> Log.log) 
+              |> Result.mapError (Error.ofNativeError >> Log.Entry.ofError)
+              |> Result.onError Log.log
               |> ignore
 
               { new IDisposable with
@@ -513,6 +514,11 @@ module NativeWindow =
                         refCount <- refCount-1
                         if refCount = 0 then
                             match hook.Value |> Windows.UnhookWinEvent with
-                            | false -> NativeError.Last |> Log.Entry.ofNativeError |> Log.log
+                            | false -> 
+                                NativeError.Last 
+                                |> Error.ofNativeError 
+                                |> Log.Entry.ofError 
+                                |> Log.log
+
                             | true  -> ()
                             hook <- None)

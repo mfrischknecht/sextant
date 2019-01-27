@@ -41,10 +41,9 @@ if args |> Seq.contains "--msbuild" then
     Target.create "NativeAPI" (fun _ ->
         let file = "NativeAPI/NativeAPI.csproj"
 
-        Process.directExec (fun info ->
-            { info with
-                FileName = "dotnet"
-                Arguments = (sprintf "restore \"%s\"" file) })
+        Command.RawCommand("dotnet", Arguments.OfArgs ["restore"; file |> sprintf "%s"])
+        |> CreateProcess.fromCommand
+        |> Proc.run
         |> ignore
 
         MSBuild.build setParams file
@@ -53,10 +52,9 @@ if args |> Seq.contains "--msbuild" then
     Target.create "Sextant" (fun _ ->
         let file = "Sextant/Sextant.fsproj"
 
-        Process.directExec (fun info ->
-            { info with
-                FileName = "dotnet"
-                Arguments = (sprintf "restore \"%s\"" file) })
+        Command.RawCommand("dotnet", Arguments.OfArgs ["restore"; file |> sprintf "%s"])
+        |> CreateProcess.fromCommand
+        |> Proc.run
         |> ignore
 
         MSBuild.build setParams file

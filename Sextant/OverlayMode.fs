@@ -164,7 +164,8 @@ module OverlayMode =
                 this.Close()
 
                 child |> window |> JumpTargets.activate 
-                |> Result.onError (Log.Entry.ofNativeError >> Log.log) 
+                |> Result.mapError Log.Entry.ofError
+                |> Result.onError  Log.log
                 |> ignore 
                 
                 child |> window |> highlight )
@@ -207,12 +208,9 @@ module OverlayMode =
         interface Mode with
             member this.Exit () =
                 this.Close ()
-    
-    let start() =
+
+    let start windows =
         let mode = MainOverlay ()
-
-        let windows = JumpTargets.findWindows () |> Array.ofSeq
-
         mode.Show ()
         mode.UpdateThumbnails windows
         mode.Activate() |> ignore 
