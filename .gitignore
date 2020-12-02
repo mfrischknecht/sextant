@@ -557,3 +557,5 @@ $RECYCLE.BIN/
 
 
 # End of https://www.gitignore.io/api/vim,fsharp,csharp,windows,visualstudio,visualstudiocode
+
+.ionide

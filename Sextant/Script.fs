@@ -4,8 +4,8 @@ open System
 open System.Reflection
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Compiler.SourceCodeServices
 open System.Diagnostics.CodeAnalysis
+open FSharp.Compiler.SourceCodeServices
 
 module Script =
     type Script private (assembly:System.Reflection.Assembly) =

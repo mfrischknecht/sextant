@@ -2,7 +2,6 @@ namespace Sextant
 
 open System
 open System.Diagnostics.CodeAnalysis
-open System.Runtime.CompilerServices
 open System.Text
 open System.Windows
 open System.Windows.Controls
@@ -13,6 +12,7 @@ open Microsoft.FSharp.Reflection
 
 open Sextant.NativeErrors
 open Sextant.Text
+open System.Runtime.CompilerServices
 
 module Log =
     type Severity =

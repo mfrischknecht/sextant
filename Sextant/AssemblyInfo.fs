@@ -1,7 +1,6 @@
 ﻿namespace Sextant
 
 open System.Reflection
-open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 
 // General Information about an assembly is controlled through the following 
@@ -34,9 +33,9 @@ open System.Runtime.InteropServices
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [<assembly: AssemblyVersion("1.0.*")>]
-[<assembly: AssemblyVersion             ("0.0.2")>]
-[<assembly: AssemblyFileVersion         ("0.0.2")>]
-[<assembly: AssemblyInformationalVersion("0.0.2-alpha")>]
+[<assembly: AssemblyVersion             ("0.0.3")>]
+[<assembly: AssemblyFileVersion         ("0.0.3")>]
+[<assembly: AssemblyInformationalVersion("0.0.3-alpha")>]
 
 do
     ()
