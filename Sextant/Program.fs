@@ -6,7 +6,6 @@ open System.Reflection
 open System.IO
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Sextant.NativeWindow
 open Sextant.WPF

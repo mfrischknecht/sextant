@@ -4,7 +4,6 @@ open System
 open System.Reflection
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Compiler.SourceCodeServices
 open System.Diagnostics.CodeAnalysis
 
 open Sextant.NativeErrors

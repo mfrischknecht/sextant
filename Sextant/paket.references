@@ -1,2 +1,4 @@
 FSharp.Core
 FSharp.Compiler.Service
+Microsoft.Build.Utilities.Core
+System.Resources.Extensions

@@ -1,8 +1,10 @@
 source https://www.nuget.org/api/v2
 
-framework: >= net461
+framework: auto-detect
 nuget FSharp.Core
 nuget FSharp.Compiler.Service
+nuget Microsoft.Build.Utilities.Core
+nuget System.Resources.Extensions
 
 // [ FAKE GROUP ]
 group Build
