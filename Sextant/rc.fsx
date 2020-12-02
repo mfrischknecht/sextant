@@ -16,7 +16,7 @@ let init (app:Sextant) =
     // ]
 
     let blacklist = [
-      // "explorer"
+      "TextInputHost"
     ]
 
     let findWindows () =
