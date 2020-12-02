@@ -15,7 +15,7 @@ let init (app:Sextant) =
     //     MenuEntry ("Hi there! :)", (fun _ -> "Woot" |> Log.info |> Log.log))
     // ]
 
-    let blacklist = [
+    let ignoredProcesses = [
       "TextInputHost"
     ]
 
@@ -29,7 +29,7 @@ let init (app:Sextant) =
                   |> Option.ofResult
                   |> Option.defaultValue ""
 
-                blacklist |> List.contains processName |> not)
+                ignoredProcesses |> List.contains processName |> not)
 
         windows
 
