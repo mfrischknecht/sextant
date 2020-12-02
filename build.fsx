@@ -12,9 +12,9 @@ open Fake.Core.TargetOperators
 
 open System.Diagnostics.CodeAnalysis
 
-let args = 
-    System.Environment.GetCommandLineArgs() 
-    |> Array.skipWhile (fun str -> str <> "--") 
+let args =
+    System.Environment.GetCommandLineArgs()
+    |> Array.skipWhile (fun str -> str <> "--")
     |> function
     | [| |] -> [| |]
     | x -> x |> Array.skip 1
@@ -22,7 +22,7 @@ let args =
 Target.create "Clean" (fun _ ->
     !! "**/bin"
     ++ "**/obj"
-    |> Shell.cleanDirs 
+    |> Shell.cleanDirs
 )
 
 
@@ -31,7 +31,7 @@ if args |> Seq.contains "--msbuild" then
     let setParams (defaults:MSBuildParams) =
         let debug = args |> Seq.contains "--debug"
 
-        { defaults with 
+        { defaults with
             Verbosity = Some(Quiet)
             Targets = ["Build"]
             Properties = [
@@ -66,13 +66,13 @@ else //.NET Core
 
     let setParams (defaults:DotNet.BuildOptions) =
         if args |> Seq.contains "--debug" |> not then defaults
-        else 
-            { defaults with 
+        else
+            { defaults with
                 Configuration = DotNet.BuildConfiguration.Debug }
 
 
     Target.create "NativeAPI" (fun _ ->
-        "NativeAPI/NativeAPI.csproj" 
+        "NativeAPI/NativeAPI.csproj"
         |> DotNet.build setParams
     )
 
@@ -98,19 +98,19 @@ Target.create "RebuildAll" ignore
 let exceptionChain (ex:System.Exception) =
     seq { let mutable e = ex
           while e <> null do
-            yield e 
+            yield e
             e <- e.InnerException}
 
 let build () =
-    try 
+    try
         Trace.trace "Building!"
         Target.runOrDefaultWithArguments "All"
     with
-    | ex -> 
+    | ex ->
         Trace.traceError "Build failed!"
 
-        ex |> exceptionChain 
-        |> Seq.iter (fun e -> 
+        ex |> exceptionChain
+        |> Seq.iter (fun e ->
             Trace.traceError e.Message)
 
 type Message =
@@ -133,7 +133,7 @@ else
                 let! message = input.Receive()
                 match message with
                 | Exit -> running <- false
-                | StartBuild ts when lastBuild < ts-> 
+                | StartBuild ts when lastBuild < ts->
                     lastBuild <- now()
                     build ()
                 | _ -> () })
@@ -144,7 +144,7 @@ else
     triggerBuild()
 
     Trace.trace "Setting up file system watcher..."
-    use watcher = 
+    use watcher =
         !! "**/.*proj" ++ "**/*.fs" ++ "**/*.cs"
         |> ChangeWatcher.run (fun _ ->
             Trace.trace "File changes detected! Triggering Build..."
