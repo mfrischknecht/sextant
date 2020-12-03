@@ -2,6 +2,7 @@
 
 open System.Reflection
 open System.Runtime.InteropServices
+open System.Windows.Media
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
@@ -36,6 +37,8 @@ open System.Runtime.InteropServices
 [<assembly: AssemblyVersion             ("0.0.3")>]
 [<assembly: AssemblyFileVersion         ("0.0.3")>]
 [<assembly: AssemblyInformationalVersion("0.0.3-alpha")>]
+
+[<assembly: DisableDpiAwareness>]
 
 do
     ()
