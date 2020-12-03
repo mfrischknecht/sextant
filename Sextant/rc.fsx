@@ -17,6 +17,11 @@ let init (app:Sextant) =
 
     let ignoredProcesses = [
       "TextInputHost"
+      "Calculator"
+      "SystemSettings"
+      "ApplicationFrameHost"
+      "PaintStudio.View"
+      "Video.UI"
     ]
 
     let findWindows () =
