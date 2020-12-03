@@ -36,6 +36,16 @@ let init (app:Sextant) =
 
                 ignoredProcesses |> List.contains processName |> not)
 
+        // windows
+        // |> Seq.iter (fun w ->
+        //     let processName =
+        //       w.Process
+        //       |> Result.map name
+        //       |> Option.ofResult
+        //       |> Option.defaultValue ""
+
+        //     processName |> Log.info |> Log.log)
+
         windows
 
     app.Hotkeys <- [
