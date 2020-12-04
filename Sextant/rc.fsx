@@ -65,4 +65,10 @@ let init (app:Sextant) =
         ( (Key.VK_TAB, Modifier.Ctrl + Modifier.Shift),
           (fun _ -> Modes.enterMode (findWindows >> GridMode.start) ) )
 
+        ( (Key.VK_K, Modifier.Ctrl + Modifier.Alt),
+          (fun _ -> VirtualDesktop.SwitchToNextDesktop () ) )
+
+        ( (Key.VK_J, Modifier.Ctrl + Modifier.Alt),
+          (fun _ -> VirtualDesktop.SwitchToNextDesktop () ) )
+
     ] |> List.append desktopHotkeys
