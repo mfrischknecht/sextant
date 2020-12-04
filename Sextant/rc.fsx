@@ -17,6 +17,7 @@ let init (app:Sextant) =
 
     let ignoredProcesses = [
       "TextInputHost"
+      "WinStore.App"
       "Calculator"
       "SystemSettings"
       "ApplicationFrameHost"
