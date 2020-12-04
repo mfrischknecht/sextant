@@ -8,6 +8,8 @@ open Sextant.JumpTargets
 open Sextant.NativeWindow
 open Sextant.Process
 
+open Sextant.NativeAPI
+
 let init (app:Sextant) =
     "Starting `rc.fsx`..." |> Log.info |> Log.log
 
@@ -43,6 +45,16 @@ let init (app:Sextant) =
       findWindows ()
       |> Seq.iter (fun w -> w |> processName |> Log.info |> Log.log)
       
+    let numberKeys = [
+      Key.VK_1; Key.VK_2; Key.VK_3; Key.VK_4; Key.VK_5;
+      Key.VK_6; Key.VK_7; Key.VK_8; Key.VK_9; Key.VK_0 
+    ]
+
+    let desktopHotkeys =
+      numberKeys
+      |> List.map (fun key -> (key, Modifier.Alt + Modifier.Ctrl))
+      |> List.mapi (fun i key -> (key, (fun _ -> VirtualDesktop.SwitchToDesktop i ) ) )
+      
     app.Hotkeys <- [
 
         ( (Key.VK_P, Modifier.Alt + Modifier.Ctrl), (fun _ -> printWindows () ) )
@@ -53,4 +65,4 @@ let init (app:Sextant) =
         ( (Key.VK_TAB, Modifier.Ctrl + Modifier.Shift),
           (fun _ -> Modes.enterMode (findWindows >> GridMode.start) ) )
 
-    ]
+    ] |> List.append desktopHotkeys
