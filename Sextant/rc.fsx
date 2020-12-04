@@ -37,6 +37,7 @@ let init (app:Sextant) =
     let findWindows () =
       JumpTargets.findWindows ()
       |> Array.filter (isIgnored >> not)
+      |> Array.filter (fun w -> w.IsOnCurrentDesktop )
       
     let printWindows () =
       findWindows ()
