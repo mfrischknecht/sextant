@@ -45,6 +45,10 @@ let init (app:Sextant) =
       findWindows ()
       |> Seq.iter (fun w -> w |> processName |> Log.info |> Log.log)
       
+    let moveActiveWindowTo index =
+      getActiveWindow () |> moveToDesktop index
+      VirtualDesktop.SwitchToDesktop index
+      
     let numberKeys = [
       Key.VK_1; Key.VK_2; Key.VK_3; Key.VK_4; Key.VK_5;
       Key.VK_6; Key.VK_7; Key.VK_8; Key.VK_9; Key.VK_0 
@@ -52,23 +56,40 @@ let init (app:Sextant) =
 
     let desktopHotkeys =
       numberKeys
-      |> List.map (fun key -> (key, Modifier.Alt + Modifier.Ctrl))
+      |> List.map (fun key -> (key, Modifier.Alt + Modifier.Ctrl) )
       |> List.mapi (fun i key -> (key, (fun _ -> VirtualDesktop.SwitchToDesktop i ) ) )
       
-    app.Hotkeys <- [
+    let windowMovingHotkeys = 
+      numberKeys
+      |> List.map (fun key -> (key, Modifier.Alt + Modifier.Ctrl + Modifier.Shift) )
+      |> List.mapi (fun i key -> (key, (fun _ -> moveActiveWindowTo i ) ) )
+      
+    app.Hotkeys <- 
+      desktopHotkeys
+      |> List.append windowMovingHotkeys
+      |> List.append [
 
-        ( (Key.VK_P, Modifier.Alt + Modifier.Ctrl), (fun _ -> printWindows () ) )
+          ( (Key.VK_P, Modifier.Alt + Modifier.Ctrl), (fun _ -> printWindows () ) )
 
-        ( (Key.VK_TAB, Modifier.Ctrl),
-          (fun _ -> Modes.enterMode (findWindows >> OverlayMode.start) ) )
+          ( (Key.VK_TAB, Modifier.Ctrl),
+            (fun _ -> Modes.enterMode (findWindows >> OverlayMode.start) ) )
 
-        ( (Key.VK_TAB, Modifier.Ctrl + Modifier.Shift),
-          (fun _ -> Modes.enterMode (findWindows >> GridMode.start) ) )
+          ( (Key.VK_TAB, Modifier.Ctrl + Modifier.Shift),
+            (fun _ -> Modes.enterMode (findWindows >> GridMode.start) ) )
 
-        ( (Key.VK_K, Modifier.Ctrl + Modifier.Alt),
-          (fun _ -> VirtualDesktop.SwitchToNextDesktop () ) )
+          ( (Key.VK_K, Modifier.Ctrl + Modifier.Alt),
+            (fun _ -> VirtualDesktop.SwitchToPreviousDesktop () ) )
 
-        ( (Key.VK_J, Modifier.Ctrl + Modifier.Alt),
-          (fun _ -> VirtualDesktop.SwitchToNextDesktop () ) )
+          ( (Key.VK_J, Modifier.Ctrl + Modifier.Alt),
+            (fun _ -> VirtualDesktop.SwitchToNextDesktop () ) )
 
-    ] |> List.append desktopHotkeys
+          ( (Key.VK_K, Modifier.Ctrl + Modifier.Alt + Modifier.Shift),
+            (fun _ ->
+              getActiveWindow () |> moveToPreviousDesktop 
+              VirtualDesktop.SwitchToPreviousDesktop () ) )
+
+          ( (Key.VK_J, Modifier.Ctrl + Modifier.Alt + Modifier.Shift),
+            (fun _ ->
+              getActiveWindow () |> moveToNextDesktop
+              VirtualDesktop.SwitchToNextDesktop () ) )
+      ]
