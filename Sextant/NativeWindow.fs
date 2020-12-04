@@ -359,6 +359,33 @@ module NativeWindow =
         (window |> moveBelowReferenceWindow reference)
         |> Result.map (fun _ -> reference |> moveBelowReferenceWindow window)
         |> Result.mapError (window.AnnotateError "Unable to place above reference window")
+        
+    let moveToDesktop index window =
+        try 
+            use sync = window |> synchronize
+            let hWin = window |> handle
+            VirtualDesktop.MoveWindowToDesktopAt (hWin,index)
+            Ok ()
+        with 
+        | ex -> ex |> Error.ofException |> Error
+
+    let moveToPreviousDesktop window =
+        try 
+            use sync = window |> synchronize
+            let hWin = window |> handle
+            hWin |> VirtualDesktop.MoveWindowToPreviousDesktop 
+            Ok ()
+        with 
+        | ex -> ex |> Error.ofException |> Error
+
+    let moveToNextDesktop window =
+        try 
+            use sync = window |> synchronize
+            let hWin = window |> handle
+            hWin |> VirtualDesktop.MoveWindowToNextDesktop 
+            Ok ()
+        with 
+        | ex -> ex |> Error.ofException |> Error
 
     let desktopWindow =
         Windows.GetDesktopWindow ()
