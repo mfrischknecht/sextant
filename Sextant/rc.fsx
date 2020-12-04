@@ -24,39 +24,32 @@ let init (app:Sextant) =
       "PaintStudio.View"
       "Video.UI"
     ]
-
+    
+    let processName (window: Window) =
+      window.Process
+      |> Result.map name
+      |> Option.ofResult
+      |> Option.defaultValue ""
+    
+    let isIgnored (window: Window) =
+      ignoredProcesses |> List.contains (processName window)
+      
     let findWindows () =
-        let windows =
-            JumpTargets.findWindows ()
-            |> Array.filter (fun w ->
-                let processName =
-                  w.Process
-                  |> Result.map name
-                  |> Option.ofResult
-                  |> Option.defaultValue ""
-
-                ignoredProcesses |> List.contains processName |> not)
-
-        // windows
-        // |> Seq.iter (fun w ->
-        //     let processName =
-        //       w.Process
-        //       |> Result.map name
-        //       |> Option.ofResult
-        //       |> Option.defaultValue ""
-
-        //     processName |> Log.info |> Log.log)
-
-        windows
-
+      JumpTargets.findWindows ()
+      |> Array.filter (isIgnored >> not)
+      
+    let printWindows () =
+      findWindows ()
+      |> Seq.iter (fun w -> w |> processName |> Log.info |> Log.log)
+      
     app.Hotkeys <- [
-        ( (Key.VK_TAB, Modifier.Ctrl),
-          (fun _ ->
-               let startMode = findWindows >> OverlayMode.start
-               Modes.enterMode startMode ) )
 
-        ( (Key.VK_TAB, Modifier.Ctrl ||| Modifier.Shift),
-          (fun _ ->
-               let startMode = findWindows >> GridMode.start
-               Modes.enterMode startMode ) )
+        ( (Key.VK_P, Modifier.Alt + Modifier.Ctrl), (fun _ -> printWindows () ) )
+
+        ( (Key.VK_TAB, Modifier.Ctrl),
+          (fun _ -> Modes.enterMode (findWindows >> OverlayMode.start) ) )
+
+        ( (Key.VK_TAB, Modifier.Ctrl + Modifier.Shift),
+          (fun _ -> Modes.enterMode (findWindows >> GridMode.start) ) )
+
     ]
