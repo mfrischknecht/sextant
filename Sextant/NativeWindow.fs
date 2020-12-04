@@ -93,6 +93,9 @@ module NativeWindow =
                 let name  = name |> Option.defaultValue "<Unknown process name>"
                 let title = title |> Option.defaultValue "<Unknown window title>"
                 sprintf "[%s] %s | %s" pid name title
+                
+          member this.IsOnCurrentDesktop =
+              VirtualDesktop.IsWindowOnCurrentDesktop this.Handle
 
           member internal this.AnnotateError message error =
               error |> annotate (sprintf "Window \"%s\": %s" this.Description message)
